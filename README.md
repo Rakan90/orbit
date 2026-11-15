@@ -81,6 +81,26 @@ information a hospital does not have before surgery. `v2` mode reproduces those 
 `booked` mode plans from booked durations only and is the honest estimate. The V2 plan itself is
 loaded as plan 1, so the site starts with exactly V2's numbers.
 
+## Specification 2 (ICS): duration prediction
+
+Target: at least 85% of a held-out test set predicted within ±15% of the actual duration, with the mean
+absolute error and a per-department breakdown.
+
+- **Data** (`database/generate_spec2_data.py`, seed 2026): `booking_sheet_spec2.csv` is V2's 241 cases
+  unchanged plus five non-identifying clinical factors (complexity, ASA class, BMI band, age band,
+  anaesthesia) and the simulated true duration; `duration_history.csv` has 3,000 past cases.
+  Durations still vary about ±30% around the booking (Constraint 2), as in V2.
+- **Model** (`engine/predict.py`): log-linear regression trained on 80% of the history and tested on the
+  held-out 20%: 86.8% within ±15% (95% interval about 84–90%), MAE 12 min; the booking alone gets 32%.
+- **Planning**: a third mode, "predicted", plans with the model's durations. On the Spec 2 sheet:
+  overtime −67%, start delay −92%, no clashes.
+- **Assumption, stated openly**: about 90% of the variation around the booking is explained by recorded
+  factors. The report's Eq. 4.2 shows 85% is reachable only if the unexplained log-spread is ≤ 0.105; on
+  V2's data no factor explains the durations and no model can exceed about 38%.
+
+To show it: Data and integrations → choose `database/data/booking_sheet_spec2.csv` → Plan it with ORbit
+(uses predicted durations automatically) → Publish → Prototype check → Run the check now.
+
 ## One fix to Salem's engine
 
 `replan` let a second emergency on the same day land in the room of a first emergency placed later

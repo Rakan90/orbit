@@ -383,7 +383,7 @@ select,input{background:#111214}.tabs{background:#17181b}.tabs button.on{backgro
 <tr><td>Overtime rate</td><td>SAR 19.3 per minute</td><td>Surgeon, anaesthetist and two nurses at 1.5×</td></tr>
 <tr><td>Solver</td><td>HiGHS, 10 s limit per day</td><td>Mixed-integer linear programme</td></tr>
 </tbody></table></div>
-<div class="card" style="margin-top:20px"><h3>Plan with ORbit</h3><p class="mute sm" id="mInfo"></p><div class="row" style="align-items:end;margin:6px 0 0"><div style="width:320px"><label for="mMode">Planned durations</label><select id="mMode"><option value="booked">Booked durations (what a hospital knows)</option><option value="v2">V2 notebook (as in the V2 results)</option></select></div><button class="p" type="button" id="mRun">Run the optimizer on the sheet in use</button></div><div id="mOut"></div><p class="sm mute" style="margin-top:10px;max-width:none">V2 measured its results with planned durations drawn around the real ones. Booked durations are what the planner would really know before surgery, so their results are the honest estimate.</p></div>
+<div class="card" style="margin-top:20px"><h3>Plan with ORbit</h3><p class="mute sm" id="mInfo"></p><div class="row" style="align-items:end;margin:6px 0 0"><div style="width:320px"><label for="mMode">Planned durations</label><select id="mMode"><option value="booked">Booked durations (what a hospital knows)</option><option value="v2">V2 notebook (as in the V2 results)</option><option value="predicted">Predicted durations (ICS model, Specification 2)</option></select></div><button class="p" type="button" id="mRun">Run the optimizer on the sheet in use</button></div><div id="mOut"></div><p class="sm mute" style="margin-top:10px;max-width:none">V2 measured its results with planned durations drawn around the real ones. Booked durations are what the planner would really know before surgery, so their results are the honest estimate.</p></div>
 </div></div></section>
 <section data-v="check"><div class="band"><div class="in">
 <h2>Prototype check <span class="proto">Prototype</span></h2>
@@ -396,7 +396,7 @@ select,input{background:#111214}.tabs{background:#17181b}.tabs button.on{backgro
 <div class="card"><h3>What is not met yet, and why</h3>
 <ul class="sm"><li><b>Shift balance (Spec 1).</b> The gap falls from 81% to 49%, not to 15%. The evening shift has fewer surgeons per department; reaching 15% would mean sending patients home. We chose patients. The fix is in the roster, not the model.</li>
 <li><b>Room-hours (Spec 4, Integrated 3).</b> Surgery time cannot shrink, so room-hours move 4%. The saving ORbit produces appears as overtime, down 60%.</li>
-<li><b>Specs 2 and 6</b> belong to the prediction (ICS) and cost (ACFN) parts of the project and are measured in the full application.</li></ul>
+<li><b>Spec 2</b> (ICS) is measured on the ICS duration model's held-out test set; it is met only with the Specification 2 dataset (booking_sheet_spec2.csv), whose durations are explained by recorded clinical factors. On V2's data, where no factor explains the durations, no model can exceed about 38%.</li><li><b>Spec 6</b> belongs to the cost (ACFN) part of the project.</li></ul>
 <p class="sm mute" style="margin-top:10px">How to reproduce: open <b>SORRS_tool_v2.ipynb</b> in Colab, run Setup, Step 1 with the example sheet, Step 2, then Step 4.</p></div>
 </div>
 </div></div></section>
@@ -425,7 +425,7 @@ select,input{background:#111214}.tabs{background:#17181b}.tabs button.on{backgro
 <p class="mute">Pick your hospital system. ORbit shows how it connects and what works today.</p>
 <div class="g3" id="sys" style="margin-top:12px"></div>
 <div class="card" id="conn" style="margin-top:14px" aria-live="polite"><h3>Import a booking sheet</h3>
-<p class="sm mute">This works today with every system: export the day's surgery list as CSV and load it here. The file stays in your browser.</p>
+<p class="sm mute">This works today with every system: export the day's surgery list as CSV and load it here. It is stored in the ORbit database as a new booking sheet.</p>
 <p class="sm mute" style="max-width:none">Columns: <span id="cols"></span></p>
 <div class="row"><label class="btn p" for="csv" style="margin:0;color:#0a0a0b;font:500 14px Geist,sans-serif">Choose a CSV file</label><input id="csv" type="file" accept=".csv,text/csv" style="position:absolute;opacity:0;width:1px;height:1px;min-height:0;padding:0"><button id="hdr" type="button">Copy the header row</button></div>
 <div id="csvOut"></div></div>
@@ -627,16 +627,16 @@ const integ=()=>{$("#cols").textContent=COLS.join(", ");
    gantt($("#csvG"),bs,false,grow,rooms);upload(f.name,String(rd.result))}catch(err){out.innerHTML=`<div class="msg" style="color:var(--red)">Could not read this file as CSV.</div>`}};rd.readAsText(f)})};
 const modeSel=()=>($("#mMode")||{}).value||"booked";
 const planOut=(p,el,after)=>{const T=p.T,can=ME&&ME.permissions.includes("publish");
- el.innerHTML=`<div class="msg"><b>Plan ${p.id} proposed</b> (${p.mode==="v2"?"V2 notebook durations":"booked durations"}; slowest day ${Math.max(...Object.values(p.solveS)).toFixed(1)} s). Overtime cost SAR ${nf(T.cost[0])} → ${nf(T.cost[1])} a day (${T.otPct>=0?"−":"+"}${Math.abs(T.otPct)}%), start delay ${T.dl[0]} → ${T.dl[1]} min, ${T.defer}% moved a day, room / surgeon clashes ${T.clash.join(" / ")}.${can?`<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="pPub${p.id}">Publish this plan</button><button type="button" id="pDis${p.id}">Discard</button></div>`:""}</div>`;
+ el.innerHTML=`<div class="msg"><b>Plan ${p.id} proposed</b> (${{v2:"V2 notebook durations",booked:"booked durations",predicted:"predicted durations (ICS model)"}[p.mode]}; slowest day ${Math.max(...Object.values(p.solveS)).toFixed(1)} s). Overtime cost SAR ${nf(T.cost[0])} → ${nf(T.cost[1])} a day (${T.otPct>=0?"−":"+"}${Math.abs(T.otPct)}%), start delay ${T.dl[0]} → ${T.dl[1]} min, ${T.defer}% moved a day, room / surgeon clashes ${T.clash.join(" / ")}.${can?`<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="pPub${p.id}">Publish this plan</button><button type="button" id="pDis${p.id}">Discard</button></div>`:""}</div>`;
  if(can){$("#pPub"+p.id).addEventListener("click",async()=>{try{await api("POST",`/api/plans/${p.id}/publish`);note(`Plan ${p.id} published. The app now shows it.`);location.hash=after||"dashboard";reload()}catch(e){el.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`)}});
   $("#pDis"+p.id).addEventListener("click",async()=>{try{await api("POST",`/api/plans/${p.id}/reject`);el.innerHTML=`<div class="msg">Plan ${p.id} discarded.</div>`}catch(e){el.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`)}})}};
-const runPlan=async(sheetId,el,after)=>{if(!gate("plan"))return;el.innerHTML=`<div class="msg">Salem's engine is planning every day… (up to about ${10*D.days.length} s)</div>`;
- try{planOut(await api("POST","/api/plans",{sheetId,mode:modeSel()}),el,after)}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const runPlan=async(sheetId,el,after,mode)=>{if(!gate("plan"))return;el.innerHTML=`<div class="msg">Salem's engine is planning every day… (up to about ${10*D.days.length} s)</div>`;
+ try{planOut(await api("POST","/api/plans",{sheetId,mode:mode||modeSel()}),el,after)}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
 const upload=async(name,csv)=>{const el=$("#csvSv");try{const sh=await api("POST","/api/sheets",{fileName:name,csv});
-  el.innerHTML=`<div class="msg"><b>Stored as sheet ${sh.id}:</b> ${sh.cases} cases, ${sh.days} days, ${sh.rooms} rooms, ${sh.surgeons} surgeons. Simulated with V2 Step 1. Not in use until a plan for it is published.<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="shPlan">Plan it with ORbit</button></div></div><div id="shOut"></div>`;
-  $("#shPlan").addEventListener("click",()=>runPlan(sh.id,$("#shOut"),"dashboard"))}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+  el.innerHTML=`<div class="msg"><b>Stored as sheet ${sh.id}:</b> ${sh.cases} cases, ${sh.days} days, ${sh.rooms} rooms, ${sh.surgeons} surgeons. Simulated with V2 Step 1.${sh.predicted?" Clinical factors found: ORbit plans it with the ICS model's predicted durations (Specification 2).":""} Not in use until a plan for it is published.<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="shPlan">Plan it with ORbit</button></div></div><div id="shOut"></div>`;
+  $("#shPlan").addEventListener("click",()=>runPlan(sh.id,$("#shOut"),"dashboard",sh.predicted?"predicted":undefined))}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
 const modelCard=async()=>{const el=$("#mInfo");if(!el)return;let h={ok:false};if(ME){try{h=await api("GET","/api/orbit/engine")}catch(e){}}
- el.innerHTML=`Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>. Plan in force: ${D.meta.plan?`${D.meta.plan.id}, ${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":D.meta.plan.mode==="v2"?"V2 notebook durations":"booked durations"}`:"none"}. Engine: ${ME?(h.ok?`${esc(h.engine)}, ${esc(h.solver)}`:"<span style=\"color:var(--red)\">not running (npm run engine)</span>"):"sign in to see"}.`};
+ el.innerHTML=`Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>. Plan in force: ${D.meta.plan?`${D.meta.plan.id}, ${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":({v2:"V2 notebook durations",booked:"booked durations",predicted:"predicted durations (ICS model)"})[D.meta.plan.mode]}`:"none"}. Engine: ${ME?(h.ok?`${esc(h.engine)}, ${esc(h.solver)}`:"<span style=\"color:var(--red)\">not running (npm run engine)</span>"):"sign in to see"}.`};
 const IC={dashboard:'<path d="M4 13a8 8 0 0 1 16 0M12 13l4-4"/><path d="M4 17h16"/>',emergencies:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/>',cases:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',staff:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',durations:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',cost:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',reports:'<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',audit:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/>',model:'<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',about:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.5c1.8.9 3 2.9 3 5.5"/>',home:'<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
  schedule:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
  integration:'<path d="M9 7H7a5 5 0 0 0 0 10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/>',tutorial:'<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
@@ -695,7 +695,7 @@ const signIn=then=>{ov(`<h3 id="ovT">Sign in to ORbit</h3><p class="mute sm">Pla
  $("#sF").addEventListener("submit",async e=>{e.preventDefault();const u=$("#sUser").value.trim(),p=$("#sPw").value;if(!u||!p){$("#sErr").textContent="Enter your username and password.";return}
   try{const r=await api("POST","/api/auth/login",{username:u,password:p});setToken(r.token);then&&then();reload()}catch(err){$("#sErr").textContent=err.message}})};
 const signOut=async()=>{try{await api("POST","/api/auth/logout")}catch(e){}setToken(null);reload()};
-const account=()=>{ov(`<h3 id="ovT">${esc(ME.name)}</h3><p class="mute sm">${esc(ME.roleLabel)}${ME.surgeonId?` · surgeon ${esc(ME.surgeonId)}`:""}. Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>, plan ${D.meta.plan?`${D.meta.plan.id} (${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":D.meta.plan.mode==="v2"?"V2 notebook durations":"booked durations"})`:"none yet"}.</p><div class="row"><button class="p" type="button" id="aOut">Sign out</button><button type="button" id="aX">Close</button></div>`);
+const account=()=>{ov(`<h3 id="ovT">${esc(ME.name)}</h3><p class="mute sm">${esc(ME.roleLabel)}${ME.surgeonId?` · surgeon ${esc(ME.surgeonId)}`:""}. Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>, plan ${D.meta.plan?`${D.meta.plan.id} (${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":({v2:"V2 notebook durations",booked:"booked durations",predicted:"predicted durations (ICS model)"})[D.meta.plan.mode]})`:"none yet"}.</p><div class="row"><button class="p" type="button" id="aOut">Sign out</button><button type="button" id="aX">Close</button></div>`);
  $("#aOut").addEventListener("click",signOut);$("#aX").addEventListener("click",ovX)};
 const gate=perm=>{if(!ME){signIn();return false}if(perm&&!ME.permissions.includes(perm)){ov(`<h3 id="ovT">Not with this account</h3><p class="mute sm">You are signed in as ${esc(ME.name)} (${esc(ME.roleLabel)}). This needs a coordinator account.</p><div class="row"><button type="button" id="pX">Close</button></div>`);$("#pX").addEventListener("click",ovX);return false}return true};
 const init=()=>{plan();
@@ -746,6 +746,7 @@ const loadEm=async()=>{const el=$("#eS");if(!el)return;if(!ME){el.innerHTML=`<di
  catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
 const staffSeen=async()=>{if(!ME||ME.role!=="staff")return;const el=$("#stSeen");try{const r=await api("GET","/api/staff/schedule?date="+D.days[S.d]);
   if(el)el.innerHTML=r.seen.length?`<div class="msg"><b>New since you last looked:</b> ${r.seen.map(x=>esc(x.caseId)).join(", ")} was added to today's published plan.</div>`:""}catch(e){if(el)el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+let MREP=null;const loadModel=()=>api("GET","/api/orbit/model").then(r=>{MREP=r;if((location.hash||"").slice(1)==="check")check(false)}).catch(()=>{});
 const check=live=>{const t0=performance.now(),n=D.days.length,sum=(m)=>{let rh=0,ot=0,dlS=0,dlN=0,gap=0,cnt=0;
   for(let d=0;d<n;d++){const bs=bars(d,m),load=D.rooms.map(()=>0);let a=0,b=0;
    bs.forEach(x=>{load[x.r]+=x.dur+x.c.to;(shift[x.su]==="B"?b+=x.dur:a+=x.dur)});
@@ -763,7 +764,7 @@ const check=live=>{const t0=performance.now(),n=D.days.length,sum=(m)=>{let rh=0
  ["Constraint 3","6 rooms × 10 h; no room or surgeon double-booked",rc+sc===0,`${D.rooms.length} rooms; ${rc} room clashes, ${sc} surgeon clashes across ${n} days; busiest surgeon ${mxS} of 600 min`,"Recomputed from every planned case; enforced by the database"],
  ["Constraint 4","Overtime at the fixed 1.5× policy rate",1,`SAR ${RATE} per overtime minute in every plan`,"Fixed rate in the database (append-only)"],
  ["Spec 1","Shift workload gap ≤ 15%",O.gap<=15,`${O.gap.toFixed(0)}% with ORbit (manual ${M.gap.toFixed(0)}%)`,"Simulation with data"],
- ["Spec 2","Duration prediction accuracy",null,"Owned by ICS; measured in the application","Application, Verification page"],
+ ["Spec 2","≥ 85% of predictions within ±15% (held-out test set)",MREP&&MREP.ok?MREP.met:"p",MREP&&MREP.ok?`${MREP.test.within15}% of ${MREP.test.cases} held-out cases within ±15%; MAE ${MREP.test.maeMin} min (booking alone ${MREP.bookedOnly.within15}%)${D.meta.prediction?`; on this sheet ${D.meta.prediction.within15}% of ${D.meta.prediction.cases}`:"; the sheet in use has no clinical factors, so its plan does not use these predictions"}`:"Start the planning engine (npm run engine) to evaluate the ICS model",`ICS model (log-linear), trained on ${MREP&&MREP.ok?nf(MREP.trainCases):"…"} past cases; the test cases are never used in training`],
  ["Spec 3","Re-schedule in ≤ 5 min",slow<=300&&(ev.engineMsMax==null||ev.engineMsMax<=300000),`Slowest full-day solve ${slow} s; emergency re-plan ${emTxt}`,"Solver log + server timestamps"],
  ["Spec 4","Room-hours ≤ 85% of baseline",rh>=15,`${(100-rh).toFixed(0)}% of baseline (${M.rh.toFixed(1)} → ${O.rh.toFixed(1)} h a day)`,"Simulation with data"],
  ["Spec 5","Overtime cost down ≥ 20%",ot>=20,`Down ${ot.toFixed(0)}% (SAR ${nf(M.cost)} → ${nf(O.cost)} a day) with ${O.cnt.toFixed(1)} of ${M.cnt.toFixed(1)} surgeries done; ${def.toFixed(1)}% moved a day`,"Simulation with data"],
@@ -774,7 +775,7 @@ const check=live=>{const t0=performance.now(),n=D.days.length,sum=(m)=>{let rh=0
  $("#chk").innerHTML=R.map(r=>`<tr><td>${r[0]}</td><td data-l="Requirement">${r[1]}</td><td data-l="Result"><span class="pill ${r[2]==null||r[2]==="p"?"o":r[2]?"y":"n"}">${r[2]==null?"Other team":r[2]==="p"?"Pending":r[2]?"Met":"Not met"}</span></td><td data-l="Measured">${r[3]}</td><td data-l="Evidence" class="mute">${r[4]}</td></tr>`).join("");
  const met=R.filter(r=>r[2]===true||r[2]===1).length,not=R.filter(r=>r[2]===false||r[2]===0).length,pend=R.filter(r=>r[2]==="p").length;
  $("#runOut").innerHTML=`<b>${met} met</b>, ${not} not met${pend?`, ${pend} pending`:""}, ${R.length-met-not-pend} measured by other departments${live?` · read from the database and recomputed just now in ${(performance.now()-t0).toFixed(0)} ms`:""}`};
-$("#run").addEventListener("click",async()=>{if(!gate())return;const t0=performance.now();try{Object.assign(D,await api("GET","/api/orbit/data"))}catch(e){$("#runOut").textContent=e.message;return}check(true);log("Prototype check run",$("#runOut").textContent.split(" ·")[0])});
+$("#run").addEventListener("click",async()=>{if(!gate())return;const t0=performance.now();try{Object.assign(D,await api("GET","/api/orbit/data"));MREP=await api("GET","/api/orbit/model")}catch(e){$("#runOut").textContent=e.message;return}check(true);log("Prototype check run",$("#runOut").textContent.split(" ·")[0])});
 
 const TOUR=[["schedule","Meet the day board","Each row is an operating room, each bar a surgery. The red line is 6:00 PM, the end of the 10-hour day.",()=>{S.d=1;S.m="orbit";$("#day").value=1}],
  ["schedule","See the hand-built day","This is the manual schedule after real durations played out. Red on the right is overtime.",()=>{S.m="manual"}],
@@ -797,9 +798,9 @@ const calc=()=>{const r=Math.max(1,+$("#cR").value||0),o=Math.max(0,+$("#cO").va
 const route=()=>{const v=(location.hash||"#home").slice(1),ok=document.querySelector(`section[data-v="${v}"]`)?v:"home";
  document.querySelectorAll("section[data-v]").forEach(s=>s.classList.toggle("on",s.dataset.v===ok));
  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+ok));
- if(ok==="audit")loadAudit();if(ok==="emergencies")loadEm();if(ok==="staff")staffSeen();if(ok==="model")modelCard()};
+ if(ok==="audit")loadAudit();if(ok==="emergencies")loadEm();if(ok==="staff")staffSeen();if(ok==="model")modelCard();if(ok==="check")check(false)};
 window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
-init();
+init();loadModel();
 })();
 </script>
 </body>

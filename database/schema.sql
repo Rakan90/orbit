@@ -100,6 +100,13 @@ CREATE TABLE sheet_case (
     waiting_days           INT NOT NULL CHECK (waiting_days >= 0),
     manual_actual_start_min INT,                                -- replay of the hand-built plan
     added_by_emergency     BOOLEAN NOT NULL DEFAULT false,      -- registered in ORbit, not on the sheet
+    -- Specification 2 (optional): non-identifying clinical factors, the simulation's true duration and the ICS prediction
+    complexity             TEXT CHECK (complexity IN ('simple', 'standard', 'complex')),
+    asa_class              TEXT CHECK (asa_class IN ('1', '2', '3', '4')),
+    bmi_band               TEXT CHECK (bmi_band IN ('<25', '25-30', '30-35', '>=35')),
+    age_band               TEXT CHECK (age_band IN ('<40', '40-64', '>=65')),
+    anaesthesia            TEXT CHECK (anaesthesia IN ('general', 'regional', 'local')),
+    predicted_duration_min INT CHECK (predicted_duration_min > 0),
     PRIMARY KEY (sheet_id, case_id),
     UNIQUE (sheet_id, row_no),
     FOREIGN KEY (sheet_id, surgeon_id) REFERENCES sheet_surgeon(sheet_id, surgeon_id),
@@ -110,7 +117,7 @@ CREATE TABLE sheet_case (
 -- ------------------------------------------------------------------ plans (versions)
 CREATE TYPE plan_kind   AS ENUM ('v2_baseline', 'optimized', 'repair');
 CREATE TYPE plan_status AS ENUM ('proposed', 'published', 'superseded', 'rejected');
-CREATE TYPE plan_mode   AS ENUM ('v2', 'booked');
+CREATE TYPE plan_mode   AS ENUM ('v2', 'booked', 'predicted');
 CREATE TYPE item_status AS ENUM ('scheduled', 'emergency', 'deferred');
 
 CREATE TABLE plan_version (

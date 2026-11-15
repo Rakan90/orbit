@@ -1,0 +1,242 @@
+case_id,surgery_date,department,surgeon_id,room,booked_start,booked_duration_min,is_emergency,booking_date,skill_required,complexity,asa_class,bmi_band,age_band,anaesthesia,sim_true_duration_min
+C00001,2026-01-04,Gynecology,SUR012,OR1,08:00,60,1,2026-01-04,standard,standard,2,30-35,<40,general,74
+C00002,2026-01-04,General surgery,SUR002,OR1,09:22,30,0,2025-12-24,standard,standard,2,<25,40-64,regional,27
+C00003,2026-01-04,General surgery,SUR004,OR1,10:14,75,0,2025-12-12,standard,standard,3,<25,40-64,general,108
+C00004,2026-01-04,General surgery,SUR004,OR1,11:51,75,0,2025-12-26,standard,simple,2,<25,>=65,regional,68
+C00005,2026-01-04,General surgery,SUR004,OR1,13:28,45,1,2026-01-04,standard,standard,1,25-30,<40,regional,56
+C00006,2026-01-04,General surgery,SUR004,OR1,14:35,45,0,2025-12-21,standard,standard,2,<25,40-64,general,50
+C00007,2026-01-04,General surgery,SUR004,OR1,15:42,90,0,2025-12-23,standard,simple,1,25-30,>=65,general,105
+C00008,2026-01-04,General surgery,SUR002,OR2,08:00,45,0,2025-12-18,standard,standard,3,30-35,40-64,regional,52
+C00009,2026-01-04,Urology,SUR009,OR2,09:07,150,1,2026-01-04,advanced,standard,2,25-30,<40,regional,126
+C00010,2026-01-04,Thoracic surgery,SUR007,OR2,11:59,180,0,2025-12-24,advanced,simple,1,25-30,>=65,general,137
+C00011,2026-01-04,General surgery,SUR015,OR2,15:21,195,0,2025-12-26,advanced,simple,3,>=35,<40,general,218
+C00012,2026-01-04,General surgery,SUR004,OR3,08:00,75,0,2025-12-23,standard,complex,4,<25,<40,general,176
+C00013,2026-01-04,General surgery,SUR001,OR3,09:37,165,0,2025-12-31,advanced,complex,3,25-30,<40,regional,228
+C00014,2026-01-04,General surgery,SUR001,OR3,12:44,165,0,2025-12-28,advanced,standard,2,>=35,>=65,general,225
+C00015,2026-01-04,General surgery,SUR001,OR3,15:51,45,1,2026-01-04,standard,standard,2,25-30,>=65,general,57
+C00016,2026-01-04,Gynecology,SUR011,OR4,08:00,60,0,2025-12-24,standard,complex,1,25-30,>=65,general,108
+C00017,2026-01-04,General surgery,SUR003,OR4,09:22,180,1,2026-01-04,advanced,standard,1,25-30,>=65,regional,135
+C00018,2026-01-04,General surgery,SUR003,OR4,12:44,345,0,2025-12-27,advanced,standard,2,<25,>=65,general,274
+C00019,2026-01-04,Thoracic surgery,SUR007,OR5,08:00,180,0,2025-12-11,advanced,complex,2,30-35,>=65,general,359
+C00020,2026-01-04,General surgery,SUR002,OR5,11:22,30,1,2026-01-04,standard,standard,3,>=35,40-64,general,45
+C00021,2026-01-04,Gynecology,SUR012,OR5,12:14,60,0,2025-12-25,standard,standard,1,>=35,40-64,general,79
+C00022,2026-01-04,General surgery,SUR002,OR5,13:36,30,1,2026-01-04,standard,standard,1,25-30,>=65,general,30
+C00023,2026-01-04,General surgery,SUR002,OR5,14:28,90,0,2025-12-29,standard,simple,2,25-30,40-64,local,46
+C00024,2026-01-04,General surgery,SUR002,OR5,16:20,45,1,2026-01-04,standard,standard,3,25-30,<40,general,67
+C00025,2026-01-04,General surgery,SUR001,OR6,08:00,45,0,2025-12-05,standard,simple,3,>=35,>=65,regional,46
+C00026,2026-01-04,Gynecology,SUR012,OR6,09:07,60,1,2026-01-04,standard,standard,3,>=35,<40,general,99
+C00027,2026-01-04,Urology,SUR013,OR6,10:29,150,0,2025-12-28,advanced,standard,4,<25,40-64,general,183
+C00028,2026-01-04,Gynecology,SUR012,OR6,13:21,60,1,2026-01-04,standard,simple,2,>=35,>=65,general,57
+C00029,2026-01-04,General surgery,SUR014,OR6,14:43,90,0,2025-12-08,standard,standard,3,30-35,40-64,general,114
+C00030,2026-01-04,General surgery,SUR014,OR6,16:35,45,1,2026-01-04,standard,standard,2,30-35,40-64,regional,46
+C00031,2026-01-05,General surgery,SUR002,OR1,08:00,45,0,2025-12-30,standard,standard,2,<25,40-64,general,50
+C00032,2026-01-05,General surgery,SUR015,OR1,09:07,225,0,2025-12-22,advanced,standard,3,>=35,<40,general,322
+C00033,2026-01-05,General surgery,SUR015,OR1,13:14,165,0,2025-12-26,advanced,standard,2,30-35,40-64,general,215
+C00034,2026-01-05,Thoracic surgery,SUR008,OR2,08:00,105,0,2025-12-31,standard,standard,3,<25,40-64,general,131
+C00035,2026-01-05,General surgery,SUR016,OR2,10:07,345,0,2025-12-14,advanced,standard,2,25-30,40-64,general,336
+C00036,2026-01-05,Urology,SUR009,OR2,16:14,150,0,2026-01-01,advanced,standard,1,<25,>=65,regional,145
+C00037,2026-01-05,General surgery,SUR001,OR3,08:00,195,0,2025-12-30,advanced,standard,1,30-35,>=65,general,185
+C00038,2026-01-05,Vascular,SUR005,OR3,11:37,75,0,2025-12-26,standard,standard,2,25-30,40-64,regional,81
+C00039,2026-01-05,General surgery,SUR001,OR3,13:14,45,0,2025-12-20,standard,simple,3,25-30,40-64,general,34
+C00040,2026-01-05,General surgery,SUR001,OR3,14:21,255,0,2025-12-27,advanced,complex,3,30-35,>=65,general,445
+C00041,2026-01-05,General surgery,SUR003,OR4,08:00,165,0,2025-12-24,advanced,standard,2,30-35,40-64,general,158
+C00042,2026-01-05,General surgery,SUR018,OR4,11:07,255,0,2025-12-27,advanced,standard,1,<25,<40,general,270
+C00043,2026-01-05,General surgery,SUR018,OR4,15:44,120,1,2026-01-05,standard,standard,2,30-35,>=65,general,170
+C00044,2026-01-05,Gynecology,SUR012,OR5,08:00,60,0,2025-12-26,standard,simple,1,25-30,>=65,general,57
+C00045,2026-01-05,General surgery,SUR014,OR5,09:22,45,0,2025-12-31,standard,complex,2,<25,>=65,local,59
+C00046,2026-01-05,Gynecology,SUR012,OR5,10:29,75,0,2025-12-28,standard,complex,2,<25,<40,general,128
+C00047,2026-01-05,General surgery,SUR017,OR5,12:06,195,0,2025-12-31,advanced,simple,2,25-30,40-64,general,131
+C00048,2026-01-05,General surgery,SUR014,OR5,15:43,45,0,2025-12-31,standard,standard,2,30-35,<40,general,48
+C00049,2026-01-05,Thoracic surgery,SUR008,OR5,16:50,105,0,2025-12-29,standard,standard,1,30-35,40-64,general,119
+C00050,2026-01-05,General surgery,SUR004,OR6,08:00,90,0,2025-12-25,standard,standard,1,<25,40-64,general,94
+C00051,2026-01-05,General surgery,SUR004,OR6,09:52,75,0,2025-12-26,standard,standard,3,25-30,<40,regional,93
+C00052,2026-01-05,Vascular,SUR006,OR6,11:29,90,0,2025-12-22,standard,standard,2,30-35,>=65,regional,86
+C00053,2026-01-05,General surgery,SUR003,OR6,13:21,240,0,2025-12-25,advanced,complex,3,25-30,40-64,general,334
+C00054,2026-01-06,General surgery,SUR002,OR1,08:00,30,1,2026-01-06,standard,complex,3,30-35,40-64,general,58
+C00055,2026-01-06,Gynecology,SUR012,OR1,08:52,60,0,2025-12-12,standard,complex,1,25-30,>=65,general,103
+C00056,2026-01-06,General surgery,SUR002,OR1,10:14,45,1,2026-01-06,standard,standard,2,<25,<40,general,47
+C00057,2026-01-06,General surgery,SUR018,OR1,11:21,165,0,2026-01-01,advanced,simple,2,25-30,<40,regional,120
+C00058,2026-01-06,Urology,SUR009,OR2,08:00,150,0,2026-01-01,advanced,complex,1,25-30,>=65,general,222
+C00059,2026-01-06,General surgery,SUR016,OR2,10:52,165,0,2025-12-23,advanced,simple,1,30-35,40-64,general,117
+C00060,2026-01-06,General surgery,SUR016,OR2,13:59,90,0,2025-12-19,standard,simple,3,25-30,>=65,regional,75
+C00061,2026-01-06,General surgery,SUR016,OR2,15:51,45,0,2026-01-01,standard,simple,3,<25,40-64,regional,36
+C00062,2026-01-06,General surgery,SUR016,OR2,16:58,45,1,2026-01-06,standard,standard,2,30-35,<40,general,40
+C00063,2026-01-06,General surgery,SUR001,OR3,08:00,255,0,2025-12-26,advanced,standard,3,25-30,40-64,general,275
+C00064,2026-01-06,General surgery,SUR001,OR3,12:37,345,0,2025-12-27,advanced,simple,2,25-30,40-64,general,212
+C00065,2026-01-06,General surgery,SUR003,OR4,08:00,165,0,2025-12-23,advanced,simple,3,>=35,>=65,regional,148
+C00066,2026-01-06,Vascular,SUR005,OR4,11:07,255,0,2025-12-23,advanced,standard,2,25-30,>=65,regional,248
+C00067,2026-01-06,Urology,SUR013,OR5,08:00,150,0,2025-12-26,advanced,standard,2,25-30,>=65,general,172
+C00068,2026-01-06,General surgery,SUR017,OR5,10:52,240,0,2025-12-27,advanced,standard,3,>=35,40-64,general,315
+C00069,2026-01-06,General surgery,SUR017,OR5,15:14,240,0,2025-12-22,advanced,standard,3,30-35,>=65,regional,278
+C00070,2026-01-06,General surgery,SUR004,OR6,08:00,90,0,2025-12-22,standard,complex,2,>=35,>=65,general,240
+C00071,2026-01-06,General surgery,SUR004,OR6,09:52,45,0,2025-12-27,standard,complex,3,25-30,<40,general,101
+C00072,2026-01-06,General surgery,SUR015,OR6,10:59,180,0,2025-12-31,advanced,simple,2,25-30,<40,general,126
+C00073,2026-01-06,Gynecology,SUR012,OR6,14:21,60,0,2026-01-03,standard,complex,2,<25,<40,general,95
+C00074,2026-01-07,Gynecology,SUR012,OR1,08:00,75,0,2025-12-26,standard,complex,3,<25,>=65,general,154
+C00075,2026-01-07,Gynecology,SUR012,OR1,09:37,60,0,2025-12-25,standard,standard,2,25-30,>=65,general,70
+C00076,2026-01-07,General surgery,SUR015,OR1,10:59,165,0,2026-01-02,advanced,standard,3,<25,<40,general,165
+C00077,2026-01-07,General surgery,SUR015,OR1,14:06,165,0,2025-12-26,advanced,standard,2,<25,>=65,regional,179
+C00078,2026-01-07,Gynecology,SUR012,OR1,17:13,60,1,2026-01-07,standard,complex,4,30-35,<40,regional,135
+C00079,2026-01-07,General surgery,SUR001,OR2,08:00,165,0,2025-12-25,advanced,simple,3,25-30,40-64,general,137
+C00080,2026-01-07,General surgery,SUR001,OR2,11:07,165,0,2025-12-30,advanced,standard,3,<25,<40,regional,139
+C00081,2026-01-07,General surgery,SUR001,OR2,14:14,45,0,2026-01-02,standard,complex,3,<25,>=65,general,82
+C00082,2026-01-07,Thoracic surgery,SUR008,OR2,15:21,105,0,2025-12-25,standard,simple,1,25-30,<40,regional,93
+C00083,2026-01-07,Thoracic surgery,SUR007,OR3,08:00,180,0,2025-12-26,advanced,standard,2,25-30,40-64,general,181
+C00084,2026-01-07,General surgery,SUR014,OR3,11:22,120,0,2025-12-27,standard,standard,3,25-30,40-64,general,151
+C00085,2026-01-07,Thoracic surgery,SUR007,OR3,13:44,105,0,2025-12-31,standard,complex,2,<25,40-64,general,135
+C00086,2026-01-07,General surgery,SUR003,OR4,08:00,225,0,2025-12-22,advanced,simple,2,30-35,>=65,general,142
+C00087,2026-01-07,General surgery,SUR003,OR4,12:07,225,0,2025-12-25,advanced,standard,1,<25,40-64,general,178
+C00088,2026-01-07,General surgery,SUR003,OR4,16:14,75,0,2025-12-25,standard,complex,1,25-30,>=65,regional,95
+C00089,2026-01-07,General surgery,SUR002,OR5,08:00,45,1,2026-01-07,standard,standard,3,25-30,40-64,general,55
+C00090,2026-01-07,Urology,SUR009,OR5,09:07,150,0,2025-12-30,advanced,standard,1,25-30,40-64,regional,118
+C00091,2026-01-07,General surgery,SUR016,OR5,11:59,225,0,2025-12-26,advanced,standard,3,>=35,<40,general,262
+C00092,2026-01-07,General surgery,SUR004,OR6,08:00,45,0,2025-12-26,standard,standard,1,<25,<40,general,47
+C00093,2026-01-07,General surgery,SUR004,OR6,09:07,30,0,2025-12-28,standard,standard,2,<25,<40,general,36
+C00094,2026-01-07,General surgery,SUR004,OR6,09:59,45,1,2026-01-07,standard,simple,1,<25,>=65,general,37
+C00095,2026-01-07,General surgery,SUR004,OR6,11:06,45,0,2025-12-25,standard,simple,2,30-35,<40,general,42
+C00096,2026-01-07,General surgery,SUR017,OR6,12:13,165,0,2025-12-26,advanced,simple,2,25-30,40-64,general,130
+C00097,2026-01-07,Gynecology,SUR011,OR6,15:20,135,0,2025-12-29,standard,simple,2,>=35,40-64,local,111
+C00098,2026-01-08,General surgery,SUR002,OR1,08:00,45,0,2025-12-20,standard,standard,2,<25,40-64,general,43
+C00099,2026-01-08,General surgery,SUR002,OR1,09:07,105,0,2025-12-25,standard,simple,2,25-30,40-64,general,76
+C00100,2026-01-08,General surgery,SUR003,OR1,11:14,240,0,2026-01-04,advanced,standard,2,30-35,<40,general,211
+C00101,2026-01-08,General surgery,SUR002,OR1,15:36,45,0,2025-12-28,standard,standard,1,25-30,<40,general,39
+C00102,2026-01-08,Thoracic surgery,SUR008,OR2,08:00,105,0,2025-12-31,standard,complex,3,25-30,40-64,general,193
+C00103,2026-01-08,General surgery,SUR014,OR2,10:07,105,0,2025-12-29,standard,standard,3,30-35,>=65,general,163
+C00104,2026-01-08,General surgery,SUR017,OR2,12:14,255,0,2026-01-02,advanced,standard,3,25-30,40-64,general,304
+C00105,2026-01-08,General surgery,SUR004,OR3,08:00,45,0,2025-12-28,standard,standard,2,>=35,40-64,general,72
+C00106,2026-01-08,Thoracic surgery,SUR019,OR3,09:07,180,0,2025-12-28,advanced,simple,3,<25,>=65,regional,153
+C00107,2026-01-08,Thoracic surgery,SUR019,OR3,12:29,120,0,2026-01-02,standard,standard,1,25-30,<40,regional,90
+C00108,2026-01-08,Urology,SUR013,OR3,14:51,150,0,2026-01-01,advanced,complex,4,25-30,40-64,general,286
+C00109,2026-01-08,Thoracic surgery,SUR007,OR4,08:00,180,0,2025-12-25,advanced,standard,1,>=35,>=65,general,207
+C00110,2026-01-08,General surgery,SUR015,OR4,11:22,195,0,2025-12-24,advanced,standard,2,<25,40-64,general,153
+C00111,2026-01-08,General surgery,SUR015,OR4,14:59,30,1,2026-01-08,standard,complex,1,30-35,40-64,general,45
+C00112,2026-01-08,General surgery,SUR015,OR4,15:51,30,0,2025-12-28,standard,standard,3,25-30,40-64,general,37
+C00113,2026-01-08,Vascular,SUR006,OR5,08:00,75,0,2025-12-26,standard,standard,2,30-35,40-64,regional,73
+C00114,2026-01-08,General surgery,SUR004,OR5,09:37,120,0,2025-12-17,standard,complex,4,25-30,>=65,general,334
+C00115,2026-01-08,General surgery,SUR001,OR5,11:59,165,0,2026-01-01,advanced,simple,1,25-30,40-64,regional,95
+C00116,2026-01-08,Urology,SUR009,OR5,15:06,150,0,2026-01-02,advanced,standard,3,30-35,40-64,general,193
+C00117,2026-01-08,General surgery,SUR014,OR6,08:00,120,0,2025-12-30,standard,standard,2,<25,40-64,general,136
+C00118,2026-01-08,Gynecology,SUR012,OR6,10:22,135,0,2025-12-23,standard,complex,1,<25,40-64,regional,180
+C00119,2026-01-08,General surgery,SUR016,OR6,12:59,225,0,2026-01-01,advanced,standard,2,30-35,40-64,general,249
+C00120,2026-01-11,General surgery,SUR002,OR1,08:00,45,0,2025-12-26,standard,standard,1,30-35,<40,regional,40
+C00121,2026-01-11,General surgery,SUR002,OR1,09:07,75,0,2025-12-23,standard,standard,2,30-35,40-64,regional,82
+C00122,2026-01-11,General surgery,SUR002,OR1,10:44,30,0,2025-12-21,standard,standard,2,25-30,40-64,general,33
+C00123,2026-01-11,Thoracic surgery,SUR008,OR1,11:36,105,0,2025-11-23,standard,simple,1,30-35,<40,general,80
+C00124,2026-01-11,General surgery,SUR017,OR1,13:43,225,0,2025-12-29,advanced,standard,2,30-35,>=65,general,224
+C00125,2026-01-11,Thoracic surgery,SUR007,OR2,08:00,180,0,2025-12-26,advanced,complex,2,<25,<40,general,212
+C00126,2026-01-11,General surgery,SUR016,OR2,11:22,165,0,2025-12-31,advanced,simple,1,30-35,<40,general,116
+C00127,2026-01-11,General surgery,SUR016,OR2,14:29,45,0,2025-12-23,standard,simple,3,>=35,40-64,regional,39
+C00128,2026-01-11,General surgery,SUR016,OR2,15:36,180,0,2026-01-05,advanced,standard,2,25-30,>=65,regional,165
+C00129,2026-01-11,General surgery,SUR004,OR3,08:00,45,0,2025-12-27,standard,simple,1,<25,40-64,general,36
+C00130,2026-01-11,General surgery,SUR015,OR3,09:07,345,0,2025-12-23,advanced,simple,3,25-30,40-64,general,321
+C00131,2026-01-11,General surgery,SUR015,OR3,15:14,165,0,2026-01-07,advanced,complex,2,30-35,<40,general,283
+C00132,2026-01-11,General surgery,SUR014,OR4,08:00,45,1,2026-01-11,standard,standard,2,25-30,40-64,general,55
+C00133,2026-01-11,Thoracic surgery,SUR019,OR4,09:07,180,0,2026-01-08,advanced,standard,2,>=35,40-64,general,220
+C00134,2026-01-11,Thoracic surgery,SUR019,OR4,12:29,375,0,2025-12-31,advanced,simple,2,>=35,<40,general,322
+C00135,2026-01-11,Urology,SUR010,OR5,08:00,60,0,2026-01-08,standard,standard,2,30-35,>=65,general,73
+C00136,2026-01-11,General surgery,SUR003,OR5,09:22,180,0,2026-01-06,advanced,simple,2,30-35,<40,general,119
+C00137,2026-01-11,General surgery,SUR003,OR5,12:44,45,0,2025-12-26,standard,complex,3,<25,40-64,general,69
+C00138,2026-01-11,Gynecology,SUR012,OR5,13:51,60,1,2026-01-11,standard,standard,2,<25,40-64,general,68
+C00139,2026-01-11,Thoracic surgery,SUR008,OR5,15:13,105,0,2025-12-30,standard,simple,2,30-35,40-64,regional,74
+C00140,2026-01-11,General surgery,SUR001,OR6,08:00,45,0,2026-01-06,standard,complex,1,25-30,>=65,general,61
+C00141,2026-01-11,Vascular,SUR006,OR6,09:07,90,0,2025-12-31,standard,standard,2,<25,>=65,general,84
+C00142,2026-01-11,General surgery,SUR001,OR6,10:59,90,0,2026-01-04,standard,standard,2,<25,<40,general,69
+C00143,2026-01-11,General surgery,SUR001,OR6,12:51,45,0,2026-01-01,standard,simple,1,<25,<40,general,30
+C00144,2026-01-11,Thoracic surgery,SUR007,OR6,13:58,180,0,2026-01-04,advanced,complex,1,25-30,40-64,regional,212
+C00145,2026-01-12,General surgery,SUR001,OR1,08:00,345,0,2025-12-17,advanced,standard,2,>=35,40-64,general,357
+C00146,2026-01-12,Urology,SUR013,OR1,14:07,150,0,2026-01-05,advanced,simple,2,25-30,40-64,general,130
+C00147,2026-01-12,Vascular,SUR006,OR2,08:00,75,0,2026-01-02,standard,complex,3,30-35,40-64,regional,126
+C00148,2026-01-12,Gynecology,SUR011,OR2,09:37,75,0,2026-01-05,standard,simple,1,<25,40-64,regional,47
+C00149,2026-01-12,General surgery,SUR015,OR2,11:14,165,0,2025-12-11,advanced,simple,3,30-35,40-64,general,166
+C00150,2026-01-12,Thoracic surgery,SUR019,OR2,14:21,120,0,2025-12-29,standard,standard,1,>=35,40-64,regional,109
+C00151,2026-01-12,General surgery,SUR002,OR3,08:00,105,0,2025-12-28,standard,simple,3,25-30,>=65,local,80
+C00152,2026-01-12,General surgery,SUR002,OR3,10:07,45,0,2026-01-06,standard,standard,3,25-30,40-64,general,58
+C00153,2026-01-12,General surgery,SUR002,OR3,11:14,45,0,2025-12-25,standard,standard,2,>=35,>=65,general,51
+C00154,2026-01-12,General surgery,SUR002,OR3,12:21,30,0,2025-12-30,standard,complex,2,<25,>=65,general,53
+C00155,2026-01-12,General surgery,SUR002,OR3,13:13,75,0,2025-12-28,standard,complex,1,>=35,40-64,general,135
+C00156,2026-01-12,Thoracic surgery,SUR008,OR3,14:50,120,0,2025-12-22,standard,simple,3,>=35,40-64,general,147
+C00157,2026-01-12,Thoracic surgery,SUR008,OR3,17:12,120,0,2026-01-08,standard,complex,2,>=35,>=65,general,244
+C00158,2026-01-12,General surgery,SUR004,OR4,08:00,45,0,2025-12-27,standard,simple,1,30-35,40-64,regional,41
+C00159,2026-01-12,General surgery,SUR003,OR4,09:07,480,0,2026-01-06,advanced,complex,2,25-30,>=65,regional,492
+C00160,2026-01-12,General surgery,SUR014,OR5,08:00,105,0,2026-01-02,standard,simple,1,25-30,40-64,general,68
+C00161,2026-01-12,Thoracic surgery,SUR007,OR5,10:07,180,0,2026-01-07,advanced,standard,2,25-30,40-64,general,181
+C00162,2026-01-12,Urology,SUR009,OR5,13:29,150,0,2025-12-28,advanced,standard,2,<25,<40,general,138
+C00163,2026-01-12,Thoracic surgery,SUR007,OR5,16:21,120,0,2026-01-10,standard,complex,3,>=35,>=65,general,266
+C00164,2026-01-12,Gynecology,SUR012,OR6,08:00,75,0,2026-01-08,standard,complex,2,<25,<40,general,129
+C00165,2026-01-12,Gynecology,SUR012,OR6,09:37,75,0,2026-01-03,standard,simple,1,<25,>=65,general,59
+C00166,2026-01-12,Gynecology,SUR020,OR6,11:14,165,0,2026-01-09,advanced,standard,2,>=35,40-64,general,173
+C00167,2026-01-12,General surgery,SUR004,OR6,14:21,105,0,2025-12-29,standard,standard,1,>=35,>=65,general,172
+C00168,2026-01-12,General surgery,SUR004,OR6,16:28,45,0,2026-01-03,standard,simple,3,<25,<40,general,47
+C00169,2026-01-12,Gynecology,SUR012,OR6,17:35,60,1,2026-01-12,standard,standard,3,>=35,<40,general,95
+C00170,2026-01-13,General surgery,SUR002,OR1,08:00,30,1,2026-01-13,standard,standard,2,30-35,>=65,local,27
+C00171,2026-01-13,General surgery,SUR002,OR1,08:52,30,0,2026-01-03,standard,simple,1,30-35,40-64,general,23
+C00172,2026-01-13,Gynecology,SUR011,OR1,09:44,60,0,2026-01-06,standard,standard,1,25-30,40-64,general,72
+C00173,2026-01-13,General surgery,SUR002,OR1,11:06,45,0,2026-01-09,standard,standard,3,25-30,<40,general,53
+C00174,2026-01-13,General surgery,SUR002,OR1,12:13,45,0,2026-01-06,standard,standard,1,<25,<40,general,44
+C00175,2026-01-13,General surgery,SUR018,OR1,13:20,345,0,2026-01-07,advanced,standard,1,25-30,>=65,general,416
+C00176,2026-01-13,Gynecology,SUR012,OR2,08:00,135,0,2026-01-01,standard,standard,3,25-30,40-64,general,136
+C00177,2026-01-13,General surgery,SUR015,OR2,10:37,480,0,2026-01-09,advanced,complex,2,<25,>=65,general,698
+C00178,2026-01-13,Thoracic surgery,SUR007,OR3,08:00,180,0,2025-12-28,advanced,simple,2,<25,40-64,general,119
+C00179,2026-01-13,General surgery,SUR016,OR3,11:22,180,0,2026-01-03,advanced,simple,2,<25,40-64,general,113
+C00180,2026-01-13,Urology,SUR013,OR3,14:44,150,0,2026-01-03,advanced,standard,3,25-30,>=65,general,190
+C00181,2026-01-13,General surgery,SUR016,OR3,17:36,45,0,2026-01-09,standard,complex,2,30-35,>=65,general,71
+C00182,2026-01-13,General surgery,SUR001,OR4,08:00,225,0,2026-01-02,advanced,standard,3,25-30,40-64,regional,203
+C00183,2026-01-13,Urology,SUR010,OR4,12:07,60,0,2026-01-02,standard,simple,2,25-30,40-64,general,42
+C00184,2026-01-13,Thoracic surgery,SUR008,OR4,13:29,105,0,2025-12-29,standard,standard,2,30-35,<40,regional,91
+C00185,2026-01-13,Urology,SUR009,OR5,08:00,150,0,2025-12-28,advanced,complex,1,30-35,40-64,general,262
+C00186,2026-01-13,General surgery,SUR017,OR5,10:52,345,0,2026-01-03,advanced,complex,3,25-30,40-64,general,652
+C00187,2026-01-13,General surgery,SUR003,OR6,08:00,240,0,2025-12-20,advanced,simple,1,25-30,40-64,general,137
+C00188,2026-01-13,General surgery,SUR003,OR6,12:22,255,0,2026-01-05,advanced,simple,2,>=35,40-64,general,174
+C00189,2026-01-13,Gynecology,SUR012,OR6,16:59,135,0,2025-12-30,standard,complex,2,<25,40-64,regional,178
+C00190,2026-01-14,General surgery,SUR002,OR1,08:00,45,0,2026-01-08,standard,complex,4,25-30,<40,general,116
+C00191,2026-01-14,Thoracic surgery,SUR008,OR1,09:07,105,0,2025-12-05,standard,simple,1,30-35,>=65,general,86
+C00192,2026-01-14,General surgery,SUR015,OR1,11:14,180,0,2025-12-29,advanced,standard,1,25-30,<40,general,195
+C00193,2026-01-14,General surgery,SUR015,OR1,14:36,105,0,2026-01-04,standard,simple,2,30-35,40-64,regional,84
+C00194,2026-01-14,General surgery,SUR015,OR1,16:43,45,0,2025-12-27,standard,standard,2,30-35,40-64,general,48
+C00195,2026-01-14,Vascular,SUR006,OR1,17:50,90,0,2026-01-02,standard,simple,1,30-35,40-64,general,62
+C00196,2026-01-14,Gynecology,SUR012,OR2,08:00,135,0,2026-01-06,standard,simple,3,25-30,40-64,general,127
+C00197,2026-01-14,Urology,SUR010,OR2,10:37,60,0,2026-01-09,standard,simple,3,30-35,40-64,general,53
+C00198,2026-01-14,General surgery,SUR002,OR2,11:59,45,0,2026-01-08,standard,complex,1,30-35,40-64,general,63
+C00199,2026-01-14,Thoracic surgery,SUR007,OR2,13:06,180,0,2026-01-06,advanced,standard,1,25-30,>=65,general,188
+C00200,2026-01-14,General surgery,SUR002,OR2,16:28,45,0,2025-12-16,standard,simple,3,<25,40-64,general,37
+C00201,2026-01-14,Vascular,SUR005,OR2,17:35,90,0,2026-01-04,standard,standard,2,>=35,<40,general,129
+C00202,2026-01-14,General surgery,SUR004,OR3,08:00,120,0,2026-01-07,standard,standard,3,25-30,<40,general,173
+C00203,2026-01-14,Gynecology,SUR012,OR3,10:22,135,0,2025-12-29,standard,standard,2,<25,<40,local,114
+C00204,2026-01-14,Urology,SUR009,OR3,12:59,150,0,2026-01-07,advanced,standard,1,<25,40-64,regional,121
+C00205,2026-01-14,Thoracic surgery,SUR008,OR3,15:51,105,0,2026-01-03,standard,standard,1,25-30,<40,general,99
+C00206,2026-01-14,General surgery,SUR001,OR4,08:00,195,0,2026-01-03,advanced,standard,2,25-30,>=65,general,195
+C00207,2026-01-14,Thoracic surgery,SUR019,OR4,11:37,180,0,2025-12-27,advanced,standard,2,25-30,<40,general,180
+C00208,2026-01-14,General surgery,SUR001,OR4,14:59,105,0,2026-01-05,standard,complex,1,25-30,40-64,general,161
+C00209,2026-01-14,General surgery,SUR003,OR5,08:00,240,0,2026-01-04,advanced,standard,2,<25,<40,general,151
+C00210,2026-01-14,Gynecology,SUR011,OR5,12:22,135,0,2025-12-28,standard,complex,2,>=35,40-64,general,261
+C00211,2026-01-14,General surgery,SUR003,OR5,14:59,90,0,2026-01-02,standard,simple,2,<25,40-64,general,47
+C00212,2026-01-14,General surgery,SUR014,OR6,08:00,120,0,2026-01-10,standard,simple,1,>=35,40-64,regional,82
+C00213,2026-01-14,General surgery,SUR014,OR6,10:22,105,0,2026-01-05,standard,complex,3,<25,<40,general,149
+C00214,2026-01-14,General surgery,SUR016,OR6,12:29,225,0,2025-11-09,advanced,standard,2,25-30,40-64,general,186
+C00215,2026-01-14,General surgery,SUR014,OR6,16:36,45,0,2026-01-04,standard,standard,3,30-35,>=65,general,64
+C00216,2026-01-15,General surgery,SUR002,OR1,08:00,30,0,2026-01-03,standard,standard,3,25-30,<40,general,35
+C00217,2026-01-15,Thoracic surgery,SUR019,OR1,08:52,180,0,2026-01-06,advanced,simple,3,30-35,<40,general,168
+C00218,2026-01-15,Vascular,SUR006,OR1,12:14,90,0,2026-01-01,standard,standard,2,<25,>=65,general,82
+C00219,2026-01-15,Thoracic surgery,SUR019,OR1,14:06,180,0,2025-12-29,advanced,standard,3,30-35,40-64,local,172
+C00220,2026-01-15,General surgery,SUR002,OR1,17:28,45,1,2026-01-15,standard,standard,1,25-30,<40,general,47
+C00221,2026-01-15,General surgery,SUR004,OR2,08:00,45,1,2026-01-15,standard,complex,2,>=35,<40,general,106
+C00222,2026-01-15,General surgery,SUR004,OR2,09:07,120,0,2026-01-06,standard,complex,1,>=35,>=65,general,241
+C00223,2026-01-15,Thoracic surgery,SUR008,OR2,11:29,105,0,2026-01-04,standard,complex,2,30-35,40-64,general,196
+C00224,2026-01-15,General surgery,SUR004,OR2,13:36,30,1,2026-01-15,standard,standard,1,30-35,40-64,general,37
+C00225,2026-01-15,Vascular,SUR005,OR2,14:28,75,0,2026-01-09,standard,simple,4,>=35,<40,general,90
+C00226,2026-01-15,Vascular,SUR005,OR2,16:05,75,0,2026-01-06,standard,simple,1,30-35,>=65,general,75
+C00227,2026-01-15,Thoracic surgery,SUR007,OR3,08:00,180,0,2026-01-06,advanced,standard,2,25-30,40-64,local,156
+C00228,2026-01-15,General surgery,SUR002,OR3,11:22,45,0,2026-01-03,standard,simple,3,25-30,40-64,local,27
+C00229,2026-01-15,General surgery,SUR015,OR3,12:29,345,0,2026-01-10,advanced,simple,1,25-30,>=65,general,299
+C00230,2026-01-15,General surgery,SUR001,OR4,08:00,345,0,2025-12-27,advanced,simple,2,25-30,>=65,general,246
+C00231,2026-01-15,General surgery,SUR001,OR4,14:07,75,0,2026-01-03,standard,complex,2,25-30,<40,general,92
+C00232,2026-01-15,General surgery,SUR001,OR4,15:44,120,0,2026-01-11,standard,simple,3,<25,40-64,general,87
+C00233,2026-01-15,General surgery,SUR003,OR5,08:00,345,0,2026-01-05,advanced,simple,2,<25,40-64,general,206
+C00234,2026-01-15,General surgery,SUR014,OR6,08:00,75,0,2026-01-08,standard,complex,3,25-30,>=65,general,160
+C00235,2026-01-15,General surgery,SUR014,OR6,09:37,45,1,2026-01-15,standard,standard,3,<25,40-64,regional,48
+C00236,2026-01-15,Vascular,SUR006,OR6,10:44,75,1,2026-01-15,standard,standard,2,25-30,40-64,general,80
+C00237,2026-01-15,General surgery,SUR014,OR6,12:21,45,0,2026-01-10,standard,standard,2,>=35,40-64,general,67
+C00238,2026-01-15,General surgery,SUR014,OR6,13:28,30,0,2025-12-29,standard,complex,1,<25,>=65,regional,39
+C00239,2026-01-15,Vascular,SUR006,OR6,14:20,90,0,2026-01-02,standard,complex,1,30-35,40-64,regional,108
+C00240,2026-01-15,General surgery,SUR014,OR6,16:12,30,1,2026-01-15,standard,standard,3,25-30,40-64,general,37
+C00241,2026-01-15,General surgery,SUR014,OR6,17:04,45,0,2026-01-08,standard,complex,2,30-35,<40,general,75

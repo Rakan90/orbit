@@ -11,6 +11,10 @@ import { callEngine } from '../engine.js';
 const r = Router();
 export const REQUIRED = ['case_id', 'surgery_date', 'department', 'surgeon_id', 'room', 'booked_start', 'booked_duration_min'];
 const OPTIONAL = ['is_emergency', 'booking_date', 'skill_required'];
+// Specification 2 (optional, all five or none): non-identifying clinical factors, plus the simulation's true duration
+export const FACTORS = { complexity: ['simple', 'standard', 'complex'], asa_class: ['1', '2', '3', '4'], bmi_band: ['<25', '25-30', '30-35', '>=35'],
+  age_band: ['<40', '40-64', '>=65'], anaesthesia: ['general', 'regional', 'local'] };
+const SPEC2 = [...Object.keys(FACTORS), 'sim_true_duration_min'];
 // Constraint 1: a sheet carrying anything that could identify a patient is refused as a whole
 const IDENTIFIER = /(patient|first_?name|last_?name|full_?name|^name$|mrn|medical_record|national_?id|iqama|passport|birth|dob|phone|mobile|email|address)/i;
 const MAX_ROWS = 5000;
@@ -48,7 +52,9 @@ export function validateSheet(text) {
   const missing = REQUIRED.filter((c) => !head.includes(c));
   if (missing.length) throw new HttpError(400, `This file is missing columns: ${missing.join(', ')}.`, { missing });
   if (rows.length - 1 > MAX_ROWS) throw new HttpError(400, `At most ${MAX_ROWS} cases per file.`);
-  const ix = Object.fromEntries([...REQUIRED, ...OPTIONAL].map((c) => [c, head.indexOf(c)]));
+  const ix = Object.fromEntries([...REQUIRED, ...OPTIONAL, ...SPEC2].map((c) => [c, head.indexOf(c)]));
+  const hasF = Object.keys(FACTORS).filter((c) => ix[c] >= 0);
+  if (hasF.length && hasF.length < 5) throw new HttpError(400, `Clinical factor columns must all be present or all absent; missing: ${Object.keys(FACTORS).filter((c) => ix[c] < 0).join(', ')}.`);
   const out = [], errors = [], seen = new Set();
   rows.slice(1).forEach((r, k) => {
     const line = k + 2;
@@ -74,6 +80,11 @@ export function validateSheet(text) {
     if (!Number.isInteger(rec.booked_duration_min) || rec.booked_duration_min < 5 || rec.booked_duration_min > 1440) bad('booked_duration_min must be a whole number of minutes (5 to 1440)');
     if (![0, 1].includes(rec.is_emergency)) bad('is_emergency must be 0 or 1');
     if (!['standard', 'advanced'].includes(rec.skill_required)) bad('skill_required must be standard or advanced');
+    if (hasF.length) for (const [c, ok] of Object.entries(FACTORS)) { rec[c] = get(c); if (!ok.includes(rec[c])) bad(`${c} must be one of ${ok.join(', ')}`); }
+    if (ix.sim_true_duration_min >= 0 && get('sim_true_duration_min') !== '') {
+      rec.sim_true_duration_min = Number(get('sim_true_duration_min'));
+      if (!Number.isInteger(rec.sim_true_duration_min) || rec.sim_true_duration_min < 5 || rec.sim_true_duration_min > 1440) bad('sim_true_duration_min must be whole minutes (5 to 1440)');
+    }
     out.push(rec);
   });
   if (errors.length) throw new HttpError(400, `The file has ${errors.length >= 20 ? '20 or more' : errors.length} problem${errors.length > 1 ? 's' : ''}. First: ${errors[0]}`, { errors });
@@ -116,15 +127,18 @@ r.post('/', requirePermission('import'), async (req, res) => {
     await c.query(
       `INSERT INTO sheet_case (sheet_id, case_id, row_no, surgery_date, department_id, surgeon_id, room_id, booked_start_min,
                                booked_duration_min, is_emergency, booking_date, skill_required, actual_duration_min, turnover_min,
-                               waiting_days, manual_actual_start_min)
-       SELECT $1, x.id, x.n, x.d, dp.id, x.s, x.r, x.bs, x.bd, x.em = 1, x.bk, x.sk, x.ad, x.t, x.w, x.mas
+                               waiting_days, manual_actual_start_min, complexity, asa_class, bmi_band, age_band, anaesthesia,
+                               predicted_duration_min)
+       SELECT $1, x.id, x.n, x.d, dp.id, x.s, x.r, x.bs, x.bd, x.em = 1, x.bk, x.sk, x.ad, x.t, x.w, x.mas, x.cx, x.asa, x.bmi, x.age, x.an, x.pd
          FROM unnest($2::text[], $3::int[], $4::date[], $5::text[], $6::text[], $7::text[], $8::int[], $9::int[], $10::int[],
-                     $11::date[], $12::text[], $13::int[], $14::int[], $15::int[], $16::int[])
-              AS x(id, n, d, dep, s, r, bs, bd, em, bk, sk, ad, t, w, mas)
+                     $11::date[], $12::text[], $13::int[], $14::int[], $15::int[], $16::int[],
+                     $17::text[], $18::text[], $19::text[], $20::text[], $21::text[], $22::int[])
+              AS x(id, n, d, dep, s, r, bs, bd, em, bk, sk, ad, t, w, mas, cx, asa, bmi, age, an, pd)
          JOIN department dp ON dp.name = x.dep`,
       [sheet.id, col('case_id'), sim.rows.map((_, k) => k + 1), col('surgery_date'), col('department'), col('surgeon_id'), col('room'),
         col('booked_start_min'), col('booked_duration_min'), col('is_emergency'), col('booking_date'), col('skill_required'),
-        col('actual_duration_min'), col('turnover_min'), col('waiting_days'), sim.rows.map((x) => Math.round(x.actual_start_min))]);
+        col('actual_duration_min'), col('turnover_min'), col('waiting_days'), sim.rows.map((x) => Math.round(x.actual_start_min)),
+        ...['complexity', 'asa_class', 'bmi_band', 'age_band', 'anaesthesia', 'predicted_duration_min'].map((k) => sim.rows.map((x) => (x[k] == null ? null : x[k])))]);
     await c.query(
       `INSERT INTO engine_run (kind, sheet_id, started_at, finished_at, status, result, created_by)
        VALUES ('simulate', $1, $2, clock_timestamp(), 'succeeded', $3, $4)`,
@@ -132,7 +146,8 @@ r.post('/', requirePermission('import'), async (req, res) => {
     const days = new Set(rows.map((x) => x.surgery_date)).size;
     await audit(c, req.user, 'Booking sheet imported', { entity: 'sheet', entityId: sheet.id,
       detail: `${fileName}: ${rows.length} cases, ${days} days, ${rooms.length} rooms, ${sim.roster.length} surgeons` });
-    return { id: sheet.id, name, cases: rows.length, days, rooms: rooms.length, surgeons: sim.roster.length };
+    const predicted = sim.rows.every((x) => x.predicted_duration_min != null);
+    return { id: sheet.id, name, cases: rows.length, days, rooms: rooms.length, surgeons: sim.roster.length, predicted };
   });
   res.status(201).json(out);
 });

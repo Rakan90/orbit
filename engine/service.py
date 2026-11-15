@@ -3,6 +3,7 @@ ORbit engine service: Salem's V2 engine (sorrs_tool_v2.py) behind HTTP.
 Only the backend calls it. Listens on 127.0.0.1 (ENGINE_PORT, default 5080).
 
   GET  /health                          engine constants, solver
+  GET  /model                           ICS duration model: held-out evaluation for Specification 2
   POST /simulate  {rows}                -> booking sheet + simulated reality (V2 Step 1)
   POST /optimize  {rows, roster, mode}  -> plan for every day (V2 Step 2)
   POST /replan    {rows, roster, date, nowMin, newCase, mode}
@@ -12,6 +13,8 @@ mode:
   "v2"      exactly as the notebook: planned durations are drawn around the simulated
             actual durations (what the V2 results were measured with)
   "booked"  the planner sees only the booked durations, as a real hospital would
+  "predicted" the planner sees the ICS model's predicted durations (Specification 2); needs a sheet
+            with the clinical factor columns (database/data/booking_sheet_spec2.csv)
 
 sorrs_tool_v2.py has one fix (replan: an emergency already placed later in the day now
 blocks its room, so a second emergency on the same day cannot land on top of it).
@@ -34,8 +37,10 @@ import scipy
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import sorrs_tool_v2 as v2  # noqa: E402  Salem's engine (one fix in replan, marked ORbit fix)
+import predict  # noqa: E402  ICS duration model (Specification 2)
 
-MODES = ("v2", "booked")
+MODES = ("v2", "booked", "predicted")
+MODEL = predict.train()        # trained once at start-up on 80% of duration_history.csv, tested on the other 20%
 _LOCK = threading.Lock()      # the planning mode switches a module global: one solve at a time
 _orig_solve_day = v2.solve_day
 
@@ -51,11 +56,24 @@ def _solve_day_booked(el, *a, **k):
         v2.PRED_CV = keep
 
 
+def _solve_day_predicted(el, *a, **k):
+    if "predicted_duration_min" not in el or el["predicted_duration_min"].isna().any():
+        raise ValueError("Predicted durations need a booking sheet with the clinical factor columns (complexity, asa_class, bmi_band, age_band, anaesthesia)")
+    el = el.copy()
+    el["actual_duration_min"] = el["predicted_duration_min"].astype(float)   # solve_day plans with pred x (1 + buffer); noise off
+    keep = v2.PRED_CV
+    v2.PRED_CV = 0.0
+    try:
+        return _orig_solve_day(el, *a, **k)
+    finally:
+        v2.PRED_CV = keep
+
+
 @contextmanager
 def planning_mode(mode):
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}")
-    v2.solve_day = _solve_day_booked if mode == "booked" else _orig_solve_day
+    v2.solve_day = {"booked": _solve_day_booked, "predicted": _solve_day_predicted}.get(mode, _orig_solve_day)
     try:
         yield
     finally:
@@ -97,10 +115,18 @@ def simulate(body):
         if col in book:
             book[col] = book[col].fillna(0).astype(int)
     sim = v2.simulate(book, seed=int(body.get("seed", 1)))
+    if "sim_true_duration_min" in sim and sim["sim_true_duration_min"].notna().all():
+        # Specification 2 dataset: the true durations come from the clinical factors, not from V2's noise
+        sim["actual_duration_min"] = sim["sim_true_duration_min"].astype(int)
+        sim = v2.replay(sim.drop(columns=["actual_start_min", "actual_end_min"], errors="ignore"), "booked_start_min")
+        sim["overrun_min"] = sim.actual_duration_min - sim.booked_duration_min
     roster = v2.roster_from(sim).reset_index()
     cols = ["case_id", "surgery_date", "department", "surgeon_id", "room", "booked_start", "booked_duration_min",
             "is_emergency", "booking_date", "skill_required", "booked_start_min", "actual_duration_min",
             "turnover_min", "waiting_days", "actual_start_min"]
+    if MODEL.can_predict(sim):                     # only sheets with the clinical factor columns (Specification 2)
+        sim["predicted_duration_min"] = MODEL.predict(sim.astype({c: str for c in predict.FEATURES}))
+        cols += predict.FEATURES[2:] + ["predicted_duration_min"]
     return {"rows": _clean(sim, cols),
             "roster": _clean(roster.rename(columns={"index": "surgeon_id"}), ["surgeon_id", "department", "shift", "skill"])}
 
@@ -156,9 +182,13 @@ def replan(body):
                           "actual_duration_min": int(new.actual_duration_min), "turnover_min": int(new.turnover_min)}}
 
 
+def model():
+    return MODEL.report
+
+
 def health():
     return {"ok": True, "engine": "sorrs_tool_v2 (Team M042, ISE)", "solver": f"HiGHS via SciPy {scipy.__version__}",
-            "modes": list(MODES),
+            "modes": list(MODES), "durationModel": {"within15": MODEL.report["test"]["within15"], "testCases": MODEL.report["test"]["cases"]},
             "constants": {"roomDayMin": v2.CAP, "dayStartMin": v2.DAY0, "plannedOvertimeMin": v2.OMAX,
                           "safetyBuffer": v2.BETA, "shiftTolerance": v2.DELTA, "wWait": v2.W_WAIT, "wOvertime": v2.W_OT,
                           "wRoomBalance": v2.W_BAL, "wShift": v2.W_S1, "timeLimitS": v2.TIME_LIMIT,
@@ -182,6 +212,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             return self._send(200, health())
+        if self.path == "/model":
+            return self._send(200, model())
         self._send(404, {"error": f"No endpoint GET {self.path}"})
 
     def do_POST(self):

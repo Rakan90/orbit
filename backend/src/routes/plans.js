@@ -24,6 +24,8 @@ export async function engineRows(db, sheetId, { date = null } = {}) {
     is_emergency: c.is_emergency ? 1 : 0, booking_date: c.booking_date, skill_required: c.skill_required,
     booked_start_min: c.booked_start_min, actual_duration_min: c.actual_duration_min, turnover_min: c.turnover_min,
     waiting_days: c.waiting_days, actual_start_min: c.manual_actual_start_min, added: c.added_by_emergency,
+    ...(c.predicted_duration_min != null ? { complexity: c.complexity, asa_class: c.asa_class, bmi_band: c.bmi_band, age_band: c.age_band,
+      anaesthesia: c.anaesthesia, predicted_duration_min: c.predicted_duration_min } : {}),
   }));
 }
 
@@ -74,7 +76,7 @@ r.post('/', requirePermission('plan'), async (req, res) => {
     const { rows: [v] } = await c.query(
       `INSERT INTO plan_version (sheet_id, kind, mode, status, solve_s, note, created_by)
        VALUES ($1, 'optimized', $2, 'proposed', $3, $4, $5) RETURNING id`,
-      [sheetId, mode, JSON.stringify(out.solveS), `Optimizer run (${mode === 'v2' ? 'V2 notebook durations' : 'booked durations'})`, req.user.id]);
+      [sheetId, mode, JSON.stringify(out.solveS), `Optimizer run (${{ v2: 'V2 notebook durations', booked: 'booked durations', predicted: 'predicted durations, ICS model' }[mode]})`, req.user.id]);
     await insertItems(c, v.id, sheetId, out.items, turnover);
     await c.query(
       `INSERT INTO engine_run (kind, sheet_id, mode, started_at, finished_at, version_id, status, result, created_by)

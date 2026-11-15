@@ -30,6 +30,11 @@ r.get('/data', async (req, res) => {
   res.set('cache-control', 'no-store').json(D);
 });
 
+// GET /api/orbit/model -> Specification 2: the ICS duration model's held-out evaluation (from the engine)
+r.get('/model', async (req, res) => {
+  try { res.json({ ok: true, ...(await callEngine('/model', null, 5)) }); } catch (err) { res.json({ ok: false, error: err.message }); }
+});
+
 // GET /api/orbit/engine -> is the planning engine up, and with which settings
 r.get('/engine', async (req, res) => {
   try { res.json(await callEngine('/health', null, 5)); } catch (err) { res.json({ ok: false, error: err.message }); }

@@ -22,6 +22,6 @@ export async function callEngine(path, body, timeoutS = 600) {
 
 export const planMode = (m) => {
   const mode = m || process.env.DEFAULT_PLAN_MODE || 'booked';
-  if (!['booked', 'v2'].includes(mode)) throw new HttpError(400, 'mode must be "booked" or "v2"');
+  if (!['booked', 'v2', 'predicted'].includes(mode)) throw new HttpError(400, 'mode must be "booked", "v2" or "predicted"');
   return mode;
 };

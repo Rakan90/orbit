@@ -64,6 +64,13 @@ export async function buildD(sheetId, { overrideVersion = null, db = { query } }
     `SELECT s.surgeon_id, s.shift, s.skill, d.name AS department FROM sheet_surgeon s JOIN department d ON d.id = s.department_id
       WHERE s.sheet_id = $1`, [sheetId]);
   const sheetCases = cases.filter((c) => !c.added_by_emergency);
+  // Specification 2 on this sheet: ICS predictions against the simulated true durations (null for sheets without factors)
+  const withPred = sheetCases.filter((c) => c.predicted_duration_min != null);
+  const prediction = withPred.length === sheetCases.length && withPred.length ? {
+    cases: withPred.length,
+    within15: pyRound((100 * withPred.filter((c) => Math.abs(c.predicted_duration_min / c.actual_duration_min - 1) <= 0.15).length) / withPred.length, 1),
+    maeMin: pyRound(withPred.reduce((a, c) => a + Math.abs(c.predicted_duration_min - c.actual_duration_min), 0) / withPred.length, 1),
+  } : null;
   const days = [...new Set(sheetCases.map((c) => c.surgery_date))].sort(cmp);
   const depts = [...new Set(cases.map((c) => c.department))].sort(cmp);
   const rooms = [...new Set(sheetCases.map((c) => c.room_id))].sort(cmp);
@@ -179,6 +186,7 @@ export async function buildD(sheetId, { overrideVersion = null, db = { query } }
     meta: {
       sheet: { id: sheetRows[0].id, name: sheetRows[0].name, source: sheetRows[0].source_file, active: sheetRows[0].is_active },
       plan: base ? { id: base.id, kind: base.kind, mode: base.mode, status: base.status } : null,
+      prediction,
       repairs: Object.fromEntries([...repairs.entries()].map(([d, r]) => [d, { id: r.id, status: r.status }])),
     },
   };
