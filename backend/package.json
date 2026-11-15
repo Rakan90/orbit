@@ -1,0 +1,23 @@
+{
+  "name": "orbit-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ORbit (SORRS V2), Team M042: API, database access and the ORbit website",
+  "type": "module",
+  "engines": { "node": ">=20.12" },
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --watch --env-file=.env src/server.js",
+    "db:reset": "dropdb --if-exists --force orbit && createdb orbit && cd ../database && psql -d orbit -v ON_ERROR_STOP=1 -q -f schema.sql -f load.sql && cd ../backend && npm run seed:users",
+    "seed:users": "node --env-file=.env scripts/seed-users.js",
+    "engine:setup": "cd ../engine && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",
+    "engine": "cd ../engine && .venv/bin/python service.py",
+    "engine:test": "cd ../engine && .venv/bin/python -m unittest -v test_engine.py",
+    "test:db": "dropdb --if-exists --force orbit_test && createdb orbit_test && cd ../database && psql -d orbit_test -v ON_ERROR_STOP=1 -q -f schema.sql -f load.sql",
+    "test": "DATABASE_URL=postgresql://localhost/orbit_test node --env-file=.env --test --test-concurrency=1 test/api.test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.0"
+  }
+}

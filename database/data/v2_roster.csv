@@ -1,0 +1,21 @@
+surgeon_id,department,shift,skill
+SUR001,General surgery,A,advanced
+SUR002,General surgery,A,advanced
+SUR003,General surgery,A,advanced
+SUR004,General surgery,A,advanced
+SUR005,Vascular,B,advanced
+SUR006,Vascular,A,advanced
+SUR007,Thoracic surgery,A,advanced
+SUR008,Thoracic surgery,B,advanced
+SUR009,Urology,A,advanced
+SUR010,Urology,A,advanced
+SUR011,Gynecology,A,advanced
+SUR012,Gynecology,A,advanced
+SUR013,Urology,B,advanced
+SUR014,General surgery,A,advanced
+SUR015,General surgery,A,advanced
+SUR016,General surgery,A,advanced
+SUR017,General surgery,A,advanced
+SUR018,General surgery,A,advanced
+SUR019,Thoracic surgery,A,advanced
+SUR020,Gynecology,A,advanced

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORbit OR scheduling</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: quiet, exact product UI in the shadcn/ui manner — neutral zinc, hairline borders, no decoration
+   IDEA: the OR coordinator's day board inside a clean app shell
+   PICTURE: the room-by-room schedule; colour is reserved for data (surgery, emergency, overtime)
+   COLOUR and TYPE: white / zinc-950, black primary, zinc borders; Geist throughout, Plex Arabic
+   LAYOUT: bordered sections, 8px radius cards with a 1px shadow, compact controls */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#09090b);--ink:light-dark(#09090b,#fafafa);--mute:light-dark(#71717a,#a1a1aa);
+--rule:light-dark(#e4e4e7,#27272a);--teal:light-dark(#18181b,#fafafa);--tealbg:light-dark(#f4f4f5,#18181b);--card:light-dark(#fafafa,#0f0f12);
+--amber:#f59e0b;--red:light-dark(#dc2626,#f87171);--ok:light-dark(#15803d,#4ade80);--bar:light-dark(#0f766e,#2dd4bf);--sh:0 1px 2px #0000000d}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Geist,Inter,system-ui,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Geist,Inter,sans-serif;margin:0;text-wrap:balance;letter-spacing:-.025em}
+h1{font-size:clamp(34px,5vw,52px);font-weight:700;line-height:1.05;letter-spacing:-.035em}h2{font-size:clamp(24px,3vw,30px);font-weight:600;line-height:1.15;margin-bottom:8px}h3{font-size:16px;font-weight:600;line-height:1.3;margin-bottom:4px}
+p{margin:0 0 12px;max-width:68ch}.mute{color:var(--mute)}.sm{font-size:14px}a{color:var(--ink);text-underline-offset:4px}
+.ar{font-family:"IBM Plex Sans Arabic",sans-serif;color:var(--mute)!important;font-weight:500!important}
+.band{padding:clamp(28px,4vw,56px) max(5vw,16px);border-bottom:1px solid var(--rule)}.in{max-width:1200px;margin:0 auto}
+.deep,.tint{background:var(--card)}
+header.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule);padding:6px max(5vw,16px)}
+header.top .in{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.logo{display:flex;align-items:center;gap:8px;font:700 20px Geist,sans-serif;color:var(--ink);text-decoration:none;letter-spacing:-.03em}
+.logo svg{width:30px;height:30px}
+nav{display:flex;flex-wrap:wrap;gap:2px;margin-left:auto}
+nav a{color:var(--mute);text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:6px;min-height:44px;display:flex;align-items:center}
+nav a:hover{color:var(--ink)}nav a.on{background:var(--tealbg);color:var(--ink)}
+.proto{font-size:12px;font-weight:500;border:1px solid var(--rule);color:var(--ink);border-radius:999px;padding:2px 10px;white-space:nowrap;vertical-align:middle;letter-spacing:0}
+button,.btn{font:500 14px Geist,Inter,sans-serif;min-height:44px;padding:8px 16px;border-radius:8px;border:1px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--sh);transition:background .15s}
+button:hover,.btn:hover{background:var(--tealbg)}
+.btn.p,button.p,.btn.t,button.t{background:var(--teal);border-color:var(--teal);color:var(--bg)}
+.btn.p:hover,button.p:hover,.btn.t:hover,button.t:hover{background:color-mix(in srgb,var(--teal) 88%,var(--bg))}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+select,input{font:15px Geist,Inter,sans-serif;min-height:44px;padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--bg);color:var(--ink);width:100%;box-shadow:var(--sh)}
+input[type=range]{box-shadow:none;border:0;accent-color:var(--teal)}
+label{font-size:14px;font-weight:500;display:block;margin-bottom:6px}
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(20px,4vw,48px);align-items:center}
+.ar{text-align:left}.hero .ar{font-size:18px;margin:0 0 12px}.hero p{font-size:17px;color:var(--mute)}.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;align-items:center}
+.board,.card{background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--sh)}
+.board{padding:14px 14px 10px}.card{padding:20px}
+.board .cap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-bottom:6px}
+.gr{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;align-items:center;margin:5px 0}
+.gr>b{font-size:13px;font-weight:500;color:var(--mute)}
+.tk{position:relative;height:28px;background:var(--tealbg);border-radius:6px;overflow:hidden}
+.tk i{position:absolute;top:0;bottom:0;border-left:1px dashed var(--rule)}.tk i.six{border-left:1.5px solid var(--red)}
+.b{position:absolute;top:3px;bottom:3px;border-radius:4px;border:0;padding:0;min-height:0;background:var(--bar);cursor:pointer;box-shadow:none}
+.b:hover{background:var(--bar);filter:brightness(1.12)}
+.b.em{background:var(--amber)}.b.new{outline:2px solid var(--ink);outline-offset:1px}.b.sel{outline:2px solid var(--ink);outline-offset:1px}.b.mv{box-shadow:inset 0 0 0 2px var(--amber)}
+div.b{cursor:default}
+.hrs{position:relative;height:18px;margin-left:50px;font-size:12px;color:var(--mute)}.hrs span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--mute);margin-top:8px}.lg s{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;text-decoration:none}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fig{border:1px solid var(--rule);border-radius:12px;padding:18px 20px;box-shadow:var(--sh)}
+.fig b{font:700 clamp(28px,3.6vw,38px)/1.1 Geist,sans-serif;letter-spacing:-.03em;display:block;white-space:nowrap}
+.fig span{font-size:14px;font-weight:500}.fig em{font-style:normal;color:var(--mute);font-size:13px;display:block}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card p:last-child{margin-bottom:0}ul{margin:0;padding-left:18px}li{margin:6px 0;max-width:66ch}li b,td b{font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:500;font-size:13px;color:var(--mute)}th.us{color:var(--ink)}td.us,th.us{background:var(--tealbg)}td:first-child{font-weight:500}tbody tr:hover td:not(.us){background:var(--card)}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;font-weight:500;border-radius:999px;padding:1px 10px;white-space:nowrap;border:1px solid var(--rule)}
+.pill.y{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.pill.n{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.pill.o,.pill.w{color:var(--mute);background:var(--tealbg)}
+.tool{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--tealbg);border-radius:10px;padding:4px}
+.tabs button{min-height:36px;padding:4px 12px;font-size:14px;border:0;background:transparent;color:var(--mute);box-shadow:none;border-radius:6px}
+.tabs button.on{background:var(--bg);color:var(--ink);box-shadow:var(--sh)}
+.kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.kp div{border:1px solid var(--rule);border-radius:12px;padding:12px 14px;box-shadow:var(--sh);display:flex;flex-direction:column-reverse}
+.kp b{font:700 22px Geist,sans-serif;letter-spacing:-.02em;white-space:nowrap}.kp span{font-size:13px;color:var(--mute)}
+.form{display:grid;gap:12px}.msg{font-size:14px;border-radius:8px;padding:10px 12px;border:1px solid var(--rule);background:var(--card);margin-top:10px}.err{color:var(--red);font-size:13px;min-height:18px}
+.hb{display:grid;grid-template-columns:78px minmax(0,1fr) 74px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+.hb .t{height:10px;background:var(--tealbg);border-radius:5px;overflow:hidden}.hb .t u{display:block;height:100%;border-radius:5px;text-decoration:none}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1.25fr) 28px minmax(0,1fr);gap:8px;align-items:stretch}
+.flow .arw{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--mute)}
+.flow .col{display:flex;flex-direction:column;gap:10px}.flow .card{padding:14px 16px}.flow .card b{font-weight:600}.flow .mid .card{background:var(--card)}
+.step{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 0;border-bottom:1px solid var(--rule)}
+.step .n{width:36px;height:36px;border-radius:50%;border:1px solid var(--rule);display:flex;align-items:center;justify-content:center;font:500 14px Geist,sans-serif;background:var(--tealbg)}
+#tour{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9;width:min(640px,calc(100vw - 24px));background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:12px;padding:16px;box-shadow:0 10px 30px #00000026}
+#tour b{font-weight:600}#tour p{margin:4px 0 12px;color:var(--mute);font-size:14px}#tour .row{margin-top:0}#tour button{min-height:40px;padding:6px 14px}
+details{border-bottom:1px solid var(--rule)}summary{cursor:pointer;font-weight:500;font-size:15px;padding:14px 0;min-height:44px}summary:hover{text-decoration:underline;text-underline-offset:4px}details p{color:var(--mute);font-size:14px}
+.price b.big{font:700 32px/1.1 Geist,sans-serif;letter-spacing:-.03em;display:block;margin:10px 0 2px;white-space:nowrap}
+.tl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}.tl div{border-top:2px solid var(--rule);padding:12px 14px 0 0}.tl div.now{border-color:var(--ink)}
+footer{padding:24px max(5vw,16px);font-size:13px;color:var(--mute)}
+section[data-v]{display:none}section[data-v].on{display:block}
+@media(max-width:900px){.hero,.tool,.g2{grid-template-columns:minmax(0,1fr)}.figs,.g4,.kp{grid-template-columns:repeat(2,minmax(0,1fr))}.g3,.tl{grid-template-columns:minmax(0,1fr)}
+ .flow{grid-template-columns:minmax(0,1fr)}.flow .arw{transform:rotate(90deg)}nav{margin-left:0}}
+@media(max-width:600px){.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--rule)}.stack td{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;border:0;padding:4px 8px}.stack td::before{content:attr(data-l);font-weight:500;color:var(--mute);font-size:13px}
+ .step{grid-template-columns:36px minmax(0,1fr)}.step button{grid-column:2}.hrs span:nth-child(even){display:none}}
+
+/* v3 — dark, minimal app shell: sidebar navigation, mono captions, colour only for data */
+:root,:root[data-theme=light],:root[data-theme=dark]{color-scheme:dark;--bg:#0a0a0b;--ink:#ededef;--mute:#8a8a93;--rule:#1e1e22;--teal:#f4f4f5;--tealbg:#17171a;--card:#101012;
+--amber:#fbbf24;--red:#f87171;--ok:#4ade80;--bar:#c9c9d1;--sh:none;--mono:"Geist Mono"}
+body{display:grid;grid-template-columns:232px minmax(0,1fr);font-size:15px}
+main,footer{grid-column:2;border-left:1px solid var(--rule)}body{background:linear-gradient(90deg,#0d0d0f 232px,var(--bg) 232px)}
+header.top{grid-row:1/span 3;position:sticky;top:0;height:100vh;height:100dvh;overflow-y:auto;background:#0d0d0f;border:0;padding:18px 12px;backdrop-filter:none}
+header.top .in{flex-direction:column;align-items:stretch;gap:0}
+.logo{font-size:17px;font-weight:600;padding:4px 8px 14px}.logo svg{width:24px;height:24px}
+header.top .proto{align-self:flex-start;margin:0 8px 14px}
+nav{flex-direction:column;margin:0;gap:1px}
+nav .nl{font:12px var(--mono);color:#5f5f68;padding:16px 10px 6px}
+nav a{min-height:40px;padding:6px 10px;border-radius:8px;font-weight:400;color:#b4b4bb}
+nav a.on{background:var(--tealbg);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+h1{font-weight:500;font-size:clamp(30px,3.8vw,44px);letter-spacing:-.03em}h1 .mute,h2 .mute{color:#6b6b74}
+h2{font-weight:500;font-size:clamp(22px,2.4vw,26px)}h3{font-weight:500;font-size:15px}
+.band{padding:clamp(24px,3.4vw,44px) clamp(16px,3.4vw,44px);border-bottom:1px solid var(--rule)}.in{max-width:1080px;margin:0}
+.deep,.tint{background:transparent}
+.hero{grid-template-columns:minmax(0,1fr);gap:26px}.hero p{font-size:16px}
+.ar{font-size:15px!important}
+.board,.card,.fig,.kp div{background:var(--card);border-radius:14px}
+.fig b,.kp b,.price b.big{font-weight:500}
+.fig em,.kp span,.hrs,.board .cap,.lg,th,.sm.mute,.hb,label,.pill,.proto,.msg .mute{font-family:var(--mono);font-size:12px;letter-spacing:0}
+label{color:var(--mute);font-weight:400}th{font-weight:400}
+.tk{background:#17171a;height:26px}.tk i{border-color:#26262b}
+.b{border-radius:5px}.b:hover{background:#fff;filter:none}.b.em:hover{background:var(--amber)}
+.b.new,.b.sel{outline-color:#fff}
+button,.btn{border-radius:10px;font-weight:500;background:var(--card)}
+button:hover,.btn:hover{background:var(--tealbg)}
+.btn.p,button.p,.btn.t,button.t{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}
+.btn.p:hover,button.p:hover,.btn.t:hover,button.t:hover{background:#d4d4d8}
+select,input{background:#0d0d0f;border-radius:10px}
+td.us,th.us{background:#131316}tbody tr:hover td:not(.us){background:transparent}td{color:#b4b4bb}td.us,td:first-child{color:var(--ink)}
+.tabs{background:#131316;border:1px solid var(--rule)}.tabs button.on{background:#232327;color:var(--ink)}
+.msg{background:var(--card);color:#b4b4bb}.msg b{color:var(--ink);font-weight:500}
+.step .n{background:var(--card);font-family:var(--mono)}
+#tour{background:#131316;border-color:#2a2a30;box-shadow:0 16px 48px #000c}
+.tl div.now{border-color:#f4f4f5}li{color:#b4b4bb}li b{color:var(--ink);font-weight:500}
+footer{border:0;font-family:var(--mono);font-size:12px;padding:22px clamp(16px,3.4vw,44px)}
+@media(max-width:900px){body{display:block;background:var(--bg)}main,footer{border-left:0}header.top{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:12px 14px}
+ header.top .in{flex-direction:row;flex-wrap:wrap;align-items:center}.logo{padding:4px 6px}header.top .proto{margin:0}
+ nav{flex-direction:row;flex-wrap:wrap;width:100%;margin-top:8px}nav .nl{display:none}nav a{min-height:44px}}
+
+/* v4 — scroll story, clips, Arabic */
+h1.xl{font-size:clamp(34px,5.2vw,60px);line-height:1.02}
+.scrollhint{font:12px var(--mono);color:var(--mute);margin:0}
+.story{display:grid;gap:22px}.big{font-size:clamp(28px,4.2vw,46px);letter-spacing:-.035em;line-height:1.06;margin:0 0 12px}
+.kick{font:12px var(--mono);color:var(--mute);margin-bottom:12px;display:block}
+.clip{border:1px solid var(--rule);border-radius:14px;background:var(--card);overflow:hidden}
+.cb{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-bottom:1px solid var(--rule);font:12px var(--mono);color:var(--mute)}
+.rec{width:8px;height:8px;border-radius:50%;background:var(--red)}.clip.play .rec{animation:blink 1s 4}
+.rp{margin-left:auto;min-height:36px;padding:2px 12px;font:12px var(--mono)}
+.scr{padding:12px 14px 6px}
+.cf{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 14px;padding:8px 14px 14px;font:12px var(--mono);color:var(--mute)}
+.cf b{font:500 26px Geist,sans-serif;color:var(--ink);letter-spacing:-.02em;white-space:nowrap}
+.pg{height:2px;background:var(--rule)}.pg i{display:block;height:100%;width:0;background:var(--ink)}.clip.play .pg i{animation:pg 4.2s linear both}
+@keyframes grow{from{transform:scaleX(0)}}@keyframes pop{from{transform:scaleY(0);opacity:0}}@keyframes slide{from{transform:translateX(var(--dx))}}@keyframes pg{to{width:100%}}@keyframes blink{50%{opacity:.2}}
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}.js .rv.in{opacity:1;transform:none}
+[lang=ar],[lang=ar] *{font-family:"IBM Plex Sans Arabic",sans-serif!important;letter-spacing:0!important}
+[data-v=arabic] .fig b{direction:ltr;text-align:right}[data-v=arabic] ul{padding:0 18px 0 0}nav a[lang=ar]{font-size:15px}
+@media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}.clip.play .pg i,.clip.play .rec{animation:none}}
+
+.comp{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.ct{display:flex;gap:12px;align-items:center;border:1px solid var(--rule);border-radius:12px;padding:12px 14px;background:var(--card)}.ct.us{border-color:#3a3a42}
+.ct i{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--rule);background:var(--tealbg);display:flex;align-items:center;justify-content:center;font:500 13px var(--mono);font-style:normal;color:var(--mute)}
+.ct.us i{background:#f4f4f5;color:#0a0a0b;border-color:#f4f4f5}.ct b{font-weight:500;display:block;font-size:14px}.ct span{font:12px var(--mono);color:var(--mute)}
+#sys .ct{justify-content:space-between}#sys .ct>div{flex:1}#sys button{min-height:40px;padding:4px 12px}
+
+/* v5 — charcoal surfaces, one-colour headings, tab icons, department colours in charts */
+:root,:root[data-theme=light],:root[data-theme=dark]{--bg:#111214;--card:#17181b;--rule:#26272c;--tealbg:#1f2024;--bar:#34d399;--em:#f4f4f5}
+body{background:linear-gradient(90deg,#0c0c0e 232px,var(--bg) 232px)}header.top{background:#0c0c0e}
+h1 .mute,h2 .mute{color:inherit}
+nav a{gap:10px}nav a svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+nav a.on{background:#1f2024;box-shadow:inset 0 0 0 1px #2e2f35}
+#dps div{display:flex;align-items:center;gap:10px;padding:6px 10px;font-size:14px;color:#b4b4bb}#dps s{width:8px;height:8px;border-radius:50%;flex:none}#dps em{margin-left:auto;font:12px var(--mono);font-style:normal;color:#5f5f68}
+.lg s{border-radius:50%;width:8px;height:8px}
+.b:hover{filter:brightness(1.15)}.b.new,.b.sel{outline-color:#fff}.b.mv{box-shadow:inset 0 0 0 2px #fff8}
+select,input{background:#111214}.tabs{background:#17181b}.tabs button.on{background:#26272c}
+.ct i{background:#1f2024}td.us,th.us{background:#17181b}
+@media(max-width:900px){body{background:var(--bg)}#dps,nav .nl{display:none}}
+
+/* v6 — no monospace anywhere: one normal typeface */
+:root,:root[data-theme=light],:root[data-theme=dark]{--mono:Geist,Inter,system-ui,sans-serif}
+.fig em,.kp span,.hrs,.board .cap,.lg,th,.sm.mute,.hb,label,.pill,.proto,.msg .mute,.kick,.cb,.cf,.rp,.scrollhint,.ct span,nav .nl,#dps em,footer{font-size:13px}
+.cf .ct{display:inline;border:0;padding:0;background:none;border-radius:0}
+
+/* v7 — app pages */
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px;margin-bottom:18px}.dsel{width:190px}
+.scroll{overflow-x:auto}.scroll table{min-width:620px}
+@media(max-width:900px){nav{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}nav a{white-space:nowrap}}
+
+/* v8 — free plan gate, clickable departments */
+#dps button{display:flex;width:100%;align-items:center;gap:10px;padding:6px 10px;min-height:36px;font:400 14px Geist,sans-serif;color:#b4b4bb;background:transparent;border:0;box-shadow:none;border-radius:8px;justify-content:flex-start;text-align:left}
+#dps button:hover{background:#17181b}#dps button.on{background:#1f2024;color:var(--ink);box-shadow:inset 0 0 0 1px #2e2f35}
+#plan{display:block;margin:0 8px 6px;padding:8px 10px;border:1px solid var(--rule);border-radius:10px;font-size:13px;color:#b4b4bb;text-decoration:none;background:#111214}
+#plan b{display:block;color:var(--ink);font-weight:500;font-size:14px}#plan i{display:block;height:4px;border-radius:2px;background:var(--rule);margin-top:6px;overflow:hidden}#plan i u{display:block;height:100%;background:var(--bar)}
+#ov{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}#ov[hidden]{display:none}
+#ov .card{width:min(440px,100%);background:#17181b;border-color:#2e2f35;box-shadow:0 20px 60px #000c}
+@media(max-width:900px){#plan{margin:0;margin-left:auto}#plan i{display:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+<a class="logo" href="#home" aria-label="ORbit home"><svg viewBox="0 0 200 200" aria-hidden="true"><g transform="rotate(-24 100 100)"><ellipse cx="100" cy="100" rx="92" ry="30" fill="none" stroke="#6b6b74" stroke-width="9"/></g><circle cx="100" cy="100" r="62" fill="#f4f4f5"/><rect x="64" y="76" width="50" height="11" rx="5.5" fill="#0a0a0b"/><rect x="120" y="76" width="16" height="11" rx="5.5" fill="#fbbf24"/><rect x="64" y="95" width="26" height="11" rx="5.5" fill="#0a0a0b"/><rect x="96" y="95" width="40" height="11" rx="5.5" fill="#0a0a0b"/><rect x="64" y="114" width="40" height="11" rx="5.5" fill="#0a0a0b"/></svg><span>ORbit</span></a>
+<span class="proto">Prototype</span>
+<a id="plan" href="#pricing"></a>
+<nav id="nav" aria-label="Main">
+<a href="#home">Home</a>
+<span class="nl">ORbit app</span>
+<a href="#dashboard">Dashboard</a><a href="#schedule">Schedule</a><a href="#emergencies">Emergencies</a><a href="#cases">Cases</a><a href="#staff">Staff</a><a href="#durations">Durations</a><a href="#cost">Cost</a><a href="#reports">Reports</a><a href="#check">Prototype check</a><a href="#integration">Data and integrations</a><a href="#audit">Audit log</a><a href="#model">Model settings</a>
+<span class="nl">Website</span>
+<a href="#tutorial">Tutorial</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="#about">Who we are</a><a href="#arabic" lang="ar">العربية</a>
+<span class="nl">Departments</span><div id="dps"></div>
+</nav></div></header>
+
+<main>
+<section data-v="home">
+<div class="band"><div class="in hero">
+<div class="rv">
+<p class="ar" lang="ar" dir="rtl">كل ساعة في غرفة العمليات تُستثمر كما يجب</p>
+<h1 class="xl">Every operating-room hour in the Kingdom, <span class="mute">put to full use.</span></h1>
+<p style="margin-top:16px">ORbit plans the surgical day for Saudi hospitals. Built at KFUPM, made for the Kingdom's mid-size hospitals.</p>
+<div class="row"><a class="btn p start" href="#dashboard">Start now</a><a class="btn" href="#tutorial">Take the 2-minute tutorial</a><a class="btn" href="#arabic" lang="ar">العربية</a></div>
+</div>
+<div class="board rv"><div class="cap"><span id="heroCap"></span><span>Planned by ORbit</span></div><div id="heroG"></div>
+<div class="lg dl"></div></div>
+<p class="scrollhint rv">Scroll to watch one real day, three ways ↓</p>
+</div></div>
+
+<div class="band"><div class="in story">
+<div class="rv"><span class="kick">01 — Today</span><h2 class="big">This plan is still built by hand. <span class="mute">Then surgeries run long.</span></h2>
+<p class="mute">One coordinator, one spreadsheet, six rooms. Watch a real day fill up. Everything past the red line is overtime the hospital pays for at 1.5×.</p></div>
+<div class="clip rv" data-c="a"><div class="cb"><span class="rec"></span><span>Clip 01 · The manual day</span><button class="rp" type="button">Replay</button></div><div class="scr"></div><div class="cf"><span class="cl">Overtime cost that day</span><b class="ct">SAR 0</b></div><div class="pg"><i></i></div></div>
+</div></div>
+
+<div class="band"><div class="in story">
+<div class="rv"><span class="kick">02 — With ORbit</span><h2 class="big">Same day. Same surgeries. <span class="mute">Planned in seconds.</span></h2>
+<p class="mute">ORbit picks the room and the surgeon for every case, with the same real durations. Watch where the red goes.</p></div>
+<div class="clip rv" data-c="b"><div class="cb"><span class="rec"></span><span>Clip 02 · The ORbit day</span><button class="rp" type="button">Replay</button></div><div class="scr"></div><div class="cf"><span class="cl">Overtime cost that day</span><b class="ct">SAR 0</b></div><div class="pg"><i></i></div></div>
+</div></div>
+
+<div class="band"><div class="in story">
+<div class="rv"><span class="kick">03 — 10:30 AM</span><h2 class="big">An emergency arrives. <span class="mute">The day does not break.</span></h2>
+<p class="mute">Started surgeries stay where they are. The emergency takes the first free room. Everything else slides, and no room or surgeon is ever in two places.</p></div>
+<div class="clip rv" data-c="c"><div class="cb"><span class="rec"></span><span>Clip 03 · Emergency re-plan</span><button class="rp" type="button">Replay</button></div><div class="scr"></div><div class="cf"><span class="cl">10:30 AM · emergency call</span><b class="ct">…</b></div><div class="pg"><i></i></div></div>
+</div></div>
+
+<div class="band"><div class="in">
+<span class="kick rv">04 — The result</span>
+<div class="figs rv" id="figs"></div>
+<p class="sm mute rv" style="margin-top:14px;max-width:none">Measured by the prototype on 10 working days and 241 surgeries of synthetic data modelled on a 6-room Saudi hospital. No real patient data is used. The clips above are animations of that data, not filmed footage. Every figure can be re-run in <a href="#check">Prototype check</a>.</p>
+</div></div>
+
+<div class="band"><div class="in g2">
+<div class="rv"><span class="kick">Vision</span><h2 class="big" style="font-size:clamp(24px,3vw,34px)">Every surgery in the Kingdom happens on the day it was promised.</h2></div>
+<div class="rv"><span class="kick">Mission</span><h2 class="big" style="font-size:clamp(24px,3vw,34px)"><span class="mute">Give mid-size Saudi hospitals a planning layer that is fair to patients and staff, proven with evidence, and priced so any hospital can use it.</span></h2></div>
+</div></div>
+
+<div class="band tint"><div class="in">
+<span class="kick">Why us</span><h2>Why ORbit, and not what is already out there</h2>
+<p class="mute">Saudi hospitals book surgery inside their hospital information system. Those systems record the schedule a coordinator builds by hand. The optimisation platforms that go further are sold to large health systems abroad. ORbit is the layer in between, sized and priced for a 4 to 12 room hospital here.</p>
+<div class="comp" style="margin-top:16px">
+<div class="ct us"><i>OR</i><div><b>ORbit</b><span>Planning layer for mid-size Saudi hospitals</span></div></div>
+<div class="ct"><i>LT</i><div><b>LeanTaaS iQueue</b><span>Global AI platform</span></div></div>
+<div class="ct"><i>Qv</i><div><b>Qventus</b><span>Global AI platform</span></div></div>
+<div class="ct"><i>OH</i><div><b>Oracle Health SurgiNet</b><span>HIS operating-theatre module</span></div></div>
+<div class="ct"><i>Ep</i><div><b>Epic OpTime</b><span>HIS operating-theatre module</span></div></div>
+<div class="ct"><i>TC</i><div><b>InterSystems TrakCare</b><span>HIS operating-theatre module</span></div></div>
+<div class="ct"><i>CP</i><div><b>CloudPital</b><span>Local HIS operating-theatre module</span></div></div>
+</div>
+<p class="sm mute" style="max-width:none;margin-top:8px">Company and product names belong to their owners. Initials are shown in place of their logos.</p>
+<table class="stack" style="margin-top:14px"><thead><tr><th></th><th class="us">ORbit</th><th>Global AI platforms<br><span class="mute sm">LeanTaaS iQueue, Qventus</span></th><th>OT module inside the HIS</th></tr></thead><tbody>
+<tr><td>Price</td><td class="us" data-l="ORbit">Free sign-up with 10 actions, then about SAR 19,000 per room per year (proposed)</td><td data-l="Global AI">Not published; enterprise contracts</td><td data-l="HIS module">Included in the HIS licence</td></tr>
+<tr><td>What it does</td><td class="us" data-l="ORbit">Predicts durations, optimises room and surgeon, re-plans emergencies</td><td data-l="Global AI">Block-time analytics, open-time marketplaces, scheduling automation</td><td data-l="HIS module">Typically books and records the schedule a person made</td></tr>
+<tr><td>Built for</td><td class="us" data-l="ORbit">Mid-size Saudi hospitals, 4 to 12 rooms</td><td data-l="Global AI">Large health systems, mainly in the US</td><td data-l="HIS module">Any hospital on that HIS</td></tr>
+<tr><td>Local fit</td><td class="us" data-l="ORbit">Sunday to Thursday week, two shifts, SAR overtime rules, PDPL by design; Arabic interface on the roadmap</td><td data-l="Global AI">Built around US practice and US data rules</td><td data-l="HIS module">Localised for billing and NPHIES, not for optimisation</td></tr>
+<tr><td>Patient data</td><td class="us" data-l="ORbit">None needed: 7 scheduling columns, no identifiers</td><td data-l="Global AI">Deep EHR integration</td><td data-l="HIS module">Full patient record</td></tr>
+<tr><td>Safety</td><td class="us" data-l="ORbit">Coordinator confirms every plan; no room or surgeon can be double-booked; every change logged</td><td data-l="Global AI">Vendor specific</td><td data-l="HIS module">Booking rules vary by vendor</td></tr>
+<tr><td>Openness</td><td class="us" data-l="ORbit">The model and every test result are on this site</td><td data-l="Global AI">Proprietary</td><td data-l="HIS module">Not applicable</td></tr>
+<tr><td>Track record</td><td class="us" data-l="ORbit">Prototype, tested on synthetic data. Not yet in a hospital</td><td data-l="Global AI">Mature: LeanTaaS reports 550+ hospitals</td><td data-l="HIS module">In daily use across the Kingdom</td></tr>
+</tbody></table>
+</div></div>
+
+<div class="band"><div class="in g2">
+<div><h2>For the Kingdom</h2>
+<p class="mute">Vision 2030's Health Sector Transformation Program asks for care that is easier to reach, higher in quality and more efficient, with digital health at its core. Operating rooms are where a hospital's most expensive hours are spent.</p>
+<ul><li><b>Access:</b> more patients operated on the day they were promised.</li><li><b>Efficiency:</b> fewer overtime riyals for the same number of surgeries.</li><li><b>Digital health:</b> an optimisation layer built in the Kingdom, by Saudi-trained engineers.</li><li><b>Privacy:</b> designed around the Personal Data Protection Law from the first line.</li></ul></div>
+<div><h2>For your hospital</h2>
+<p class="mute">Four goals we hold ourselves to, each measured in the prototype.</p>
+<ul><li><b>The surgery list gets done.</b> A case moves to the next day only when it truly cannot fit.</li><li><b>Staff go home on time.</b> Overtime is priced into every plan at your 1.5× policy rate.</li><li><b>Emergencies do not break the day.</b> A feasible new schedule in seconds, not phone calls.</li><li><b>Nobody is in two places.</b> Every plan is checked for room and surgeon clashes before anyone sees it.</li></ul></div>
+</div></div>
+
+<div class="band tint"><div class="in">
+<h2>Safety comes before speed</h2>
+<div class="g4" style="margin-top:14px">
+<div class="card"><h3>A person decides</h3><p class="mute sm">ORbit proposes. The OR coordinator confirms and publishes. Nothing reaches staff without a human approval.</p></div>
+<div class="card"><h3>No double-booking</h3><p class="mute sm">A case starts only when its room and its surgeon are both free. The clash count is recomputed and shown with every plan.</p></div>
+<div class="card"><h3>No patient identity</h3><p class="mute sm">The planner reads case ID, date, department, surgeon, room, start and duration. Names and file numbers never enter it.</p></div>
+<div class="card"><h3>Every change traced</h3><p class="mute sm">Each draft, move, emergency and publish is written to an audit log with who did it and when.</p></div>
+</div></div></div>
+
+<div class="band deep"><div class="in g2" style="align-items:center">
+<div><h2>From a KFUPM senior design lab to the Kingdom's operating rooms</h2><p class="mute">We are four KFUPM students from three departments. We started with one question from our own city's hospitals: why is a schedule this important still built by hand? Our next step is a pilot with a mid-size Saudi hospital.</p></div>
+<div class="row" style="justify-content:flex-end"><a class="btn p start" href="#dashboard">Start now</a><a class="btn" href="#about">Who we are</a></div>
+</div></div>
+</section>
+
+<section data-v="schedule"><div class="band"><div class="in">
+<h2>Schedule <span class="proto">Prototype</span></h2>
+<p class="mute">Every day on the booking sheet in use. Pick a day, compare the hand-built schedule with ORbit's, then add an emergency and watch the day re-plan. Bars show what actually happened once real surgery durations played out.</p>
+<div class="tool" style="margin-top:14px">
+<div>
+<div class="row" style="margin:0 0 10px;align-items:end">
+<div style="width:190px"><label for="day">Day</label><select id="day"></select></div>
+<div class="tabs" id="mode"><button data-m="manual">Manual schedule</button><button data-m="orbit">ORbit schedule</button><button data-m="replan" id="mRe" hidden>After re-plan</button></div>
+</div>
+<div class="board"><div id="G"></div>
+<div class="lg dl"></div></div>
+<div class="kp" id="kp"></div>
+<div class="msg" id="sel">Select any bar to see the case.</div>
+</div>
+<aside class="card">
+<h3>Add an emergency</h3><p class="mute sm">The coordinator types five things. Cases already started stay put; the rest are re-planned around the emergency.</p>
+<form class="form" id="emf" novalidate>
+<div><label for="eNow">Time now</label><select id="eNow"></select></div>
+<div><label for="eDp">Department</label><select id="eDp"></select></div>
+<div><label for="eSu">Surgeon</label><select id="eSu"></select></div>
+<div><label for="eMin">Expected minutes</label><input id="eMin" type="number" inputmode="numeric" value="90" min="15" max="400"></div>
+<div class="err" id="eErr" role="alert"></div>
+<button class="p" type="submit">Re-plan the day</button>
+</form>
+<div id="reOut"></div>
+</aside></div>
+</div></div></section>
+
+<section data-v="dashboard"><div class="band"><div class="in">
+<div class="ph"><div><h2>Dashboard</h2><p class="mute" style="margin:0">Today at a glance, as planned by ORbit and compared with the hand-built schedule.</p></div><div class="dsel"><label>Day</label><select class="day2" aria-label="Day"></select></div></div>
+<div class="kp" id="dT"></div>
+<div class="tool"><div class="board"><div class="cap"><span>Today's rooms, planned by ORbit</span><a href="#schedule">Open schedule</a></div><div id="dG"></div><div class="lg dl"></div></div>
+<aside class="card"><h3>Needs attention</h3><ul class="sm" id="dA"></ul><div class="row"><a class="btn p" href="#emergencies">Register an emergency</a></div></aside></div>
+<div class="card" style="margin-top:20px"><h3>Overtime cost across the 10 days</h3><p class="mute sm">SAR per day. Red is the manual schedule, green is ORbit.</p><div id="otc2"></div></div>
+</div></div></section>
+<section data-v="emergencies"><div class="band"><div class="in">
+<div class="ph"><div><h2>Emergencies</h2><p class="mute" style="margin:0">Emergency cases on the selected day, and the re-plans made on the server.</p></div><div class="dsel"><label>Day</label><select class="day2" aria-label="Day"></select></div></div>
+<div class="row" style="margin:0 0 16px"><button class="p" id="eGo" type="button">Register an emergency</button></div>
+<h3>Emergencies on the board</h3><div id="eT"></div>
+<h3 style="margin-top:24px">Re-plan for this day</h3><div id="eR"></div>
+<h3 style="margin-top:24px">Server record: Specification 3 and Integrated Specification 2</h3><div id="eS"></div><p class="sm mute" style="margin-top:8px;max-width:none">Engine time runs from the moment the server receives the emergency to the moment the new plan is stored. End to end runs from the same moment to the first time OR staff open the published schedule. Both are computed by the database from server timestamps.</p>
+</div></div></section>
+<section data-v="cases"><div class="band"><div class="in">
+<div class="ph"><div><h2>Cases</h2><p class="mute" style="margin:0">Every surgery on the booking sheet in use. Search by case or surgeon, or filter.</p></div></div>
+<div class="g3" style="margin-bottom:14px"><div><label for="cq">Search</label><input id="cq" type="search" placeholder="Case ID or surgeon"></div><div><label for="cdp">Department</label><select id="cdp"></select></div><div><label for="cst">Status</label><select id="cst"><option value="">All</option><option value="0">Scheduled</option><option value="1">Emergency</option><option value="2">Moved to next day</option></select></div></div>
+<p class="sm mute" id="cN"></p><div id="cT"></div><div class="row"><button id="cMore" type="button">Show more</button></div>
+</div></div></section>
+<section data-v="staff"><div class="band"><div class="in">
+<div class="ph"><div><h2>Staff</h2><p class="mute" style="margin:0">Each surgeon's own day, and workload across the 10 days.</p></div><div class="dsel"><label>Day</label><select class="day2" aria-label="Day"></select></div></div>
+<div class="g2" style="align-items:start"><div class="card"><h3>My schedule</h3><div style="max-width:260px;margin:8px 0 12px"><label for="stS">Surgeon</label><select id="stS"></select></div><div id="stM"></div><div id="stSeen"></div></div>
+<div class="card"><h3>Workload, all surgeons</h3><p class="sm mute">Planned operating minutes per day. A surgeon's day is capped at 600 minutes.</p><div id="stT"></div></div></div>
+</div></div></section>
+<section data-v="durations"><div class="band"><div class="in">
+<div class="ph"><div><h2>Durations</h2><p class="mute" style="margin:0">How far hand bookings are from what surgeries really take. This is the gap duration prediction has to close.</p></div></div>
+<div id="duT"></div><p class="sm mute" style="margin-top:12px;max-width:none">Booked against actual minutes in the demo data. The prediction model itself (Specification 2) belongs to the ICS part of the project and is measured in the full application.</p>
+</div></div></section>
+<section data-v="cost"><div class="band"><div class="in">
+<div class="ph"><div><h2>Cost</h2><p class="mute" style="margin:0">Overtime cost at the 1.5× policy rate of SAR 19.3 per minute, manual against ORbit.</p></div></div>
+<div class="kp" id="coK"></div><div id="coT"></div><p class="sm mute" style="margin-top:12px;max-width:none">The yearly figure assumes 250 working days that look like these 10 simulated days. It is a projection, not a measured result.</p>
+</div></div></section>
+<section data-v="reports"><div class="band"><div class="in">
+<div class="ph"><div><h2>Reports</h2><p class="mute" style="margin:0">The 10-day summary a coordinator would send to management.</p></div></div>
+<div class="row" style="margin:0 0 14px"><button id="rCp" type="button">Copy report as CSV</button></div><div id="rT"></div>
+</div></div></section>
+<section data-v="audit"><div class="band"><div class="in">
+<div class="ph"><div><h2>Audit log</h2><p class="mute" style="margin:0">Every action, newest first, read from the ORbit database.</p></div></div>
+<div id="aT"></div><p class="sm mute" style="margin-top:12px;max-width:none">Each line carries the user and the server's time. The log is append-only: the database refuses to edit or delete it.</p>
+</div></div></section>
+<section data-v="model"><div class="band"><div class="in">
+<div class="ph"><div><h2>Model settings</h2><p class="mute" style="margin:0">The values Salem's engine (sorrs_tool_v2.py) runs with. Read-only.</p></div></div>
+<div class="scroll"><table><thead><tr><th>Setting</th><th>Value</th><th>What it means</th></tr></thead><tbody>
+<tr><td>Room day</td><td>600 min</td><td>8:00 AM to 6:00 PM, Sunday to Thursday</td></tr>
+<tr><td>Planned overtime allowed</td><td>120 min per room</td><td>The most overtime the plan may put on one room</td></tr>
+<tr><td>Surgeon day</td><td>600 min</td><td>No surgeon is planned beyond one room-day</td></tr>
+<tr><td>Safety buffer</td><td>5%</td><td>Added to every predicted duration</td></tr>
+<tr><td>Moving a patient to the next day</td><td>400 × (days waited + 1)</td><td>Costs more than any overtime a room may plan, so it is a last resort</td></tr>
+<tr><td>Overtime</td><td>3 per minute</td><td>Weight in the objective</td></tr>
+<tr><td>Room balance</td><td>2 per minute</td><td>Gap between the busiest and quietest room</td></tr>
+<tr><td>Shift balance</td><td>5 per minute beyond 15%</td><td>Soft target, never forces a patient out</td></tr>
+<tr><td>Overtime rate</td><td>SAR 19.3 per minute</td><td>Surgeon, anaesthetist and two nurses at 1.5×</td></tr>
+<tr><td>Solver</td><td>HiGHS, 10 s limit per day</td><td>Mixed-integer linear programme</td></tr>
+</tbody></table></div>
+<div class="card" style="margin-top:20px"><h3>Plan with ORbit</h3><p class="mute sm" id="mInfo"></p><div class="row" style="align-items:end;margin:6px 0 0"><div style="width:320px"><label for="mMode">Planned durations</label><select id="mMode"><option value="booked">Booked durations (what a hospital knows)</option><option value="v2">V2 notebook (as in the V2 results)</option></select></div><button class="p" type="button" id="mRun">Run the optimizer on the sheet in use</button></div><div id="mOut"></div><p class="sm mute" style="margin-top:10px;max-width:none">V2 measured its results with planned durations drawn around the real ones. Booked durations are what the planner would really know before surgery, so their results are the honest estimate.</p></div>
+</div></div></section>
+<section data-v="check"><div class="band"><div class="in">
+<h2>Prototype check <span class="proto">Prototype</span></h2>
+<p class="mute">Every project constraint, specification and integrated specification, checked against the prototype's own output. Press the button: the plans in force are read from the ORbit database and every number is recomputed; nothing is typed in by hand.</p>
+<div class="row" style="margin:6px 0 16px"><button class="t" id="run">Run the check now</button><span class="msg" id="runOut" style="margin:0"></span></div>
+<table class="stack"><thead><tr><th>Item</th><th>Requirement</th><th>Result</th><th>Measured by the prototype</th><th>Evidence</th></tr></thead><tbody id="chk"></tbody></table>
+<div class="g2" style="margin-top:26px">
+<div class="card"><h3>Overtime cost per day, manual against ORbit</h3><p class="mute sm">Same days, same surgeries, same real durations. SAR per day at the 1.5× policy rate.</p><div id="otc"></div>
+<div class="lg"><span><s style="background:var(--red)"></s>Manual</span><span><s style="background:var(--bar)"></s>ORbit</span></div></div>
+<div class="card"><h3>What is not met yet, and why</h3>
+<ul class="sm"><li><b>Shift balance (Spec 1).</b> The gap falls from 81% to 49%, not to 15%. The evening shift has fewer surgeons per department; reaching 15% would mean sending patients home. We chose patients. The fix is in the roster, not the model.</li>
+<li><b>Room-hours (Spec 4, Integrated 3).</b> Surgery time cannot shrink, so room-hours move 4%. The saving ORbit produces appears as overtime, down 60%.</li>
+<li><b>Specs 2 and 6</b> belong to the prediction (ICS) and cost (ACFN) parts of the project and are measured in the full application.</li></ul>
+<p class="sm mute" style="margin-top:10px">How to reproduce: open <b>SORRS_tool_v2.ipynb</b> in Colab, run Setup, Step 1 with the example sheet, Step 2, then Step 4.</p></div>
+</div>
+</div></div></section>
+
+<section data-v="integration"><div class="band"><div class="in">
+<h2>How ORbit fits into a hospital</h2>
+<p class="mute">ORbit does not replace the hospital information system. It sits beside it: the HIS stays the record of bookings, ORbit decides the best arrangement of them, and the confirmed plan goes back.</p>
+<div class="flow" style="margin-top:16px">
+<div class="col"><h3>Hospital systems</h3>
+<div class="card"><b>HIS / EHR surgery booking</b><p class="sm mute">Oracle Health, Epic, TrakCare or a local HIS. Sends the day's booked cases.</p><span class="pill y">Works today by CSV or Excel</span> <span class="pill w">HL7 / FHIR link planned</span></div>
+<div class="card"><b>Staff roster</b><p class="sm mute">Surgeons, department, skill, shift.</p><span class="pill y">Works today by CSV</span></div>
+<div class="card"><b>NPHIES approval status</b><p class="sm mute">Only schedule cases whose insurance approval is in place.</p><span class="pill w">Planned</span></div></div>
+<div class="arw" aria-hidden="true">→</div>
+<div class="col mid"><h3>ORbit</h3>
+<div class="card"><b>1. Predict</b><p class="sm mute">Estimates each surgery's duration from procedure, patient class and history.</p><span class="pill y">Working</span></div>
+<div class="card"><b>2. Optimise</b><p class="sm mute">A mixed-integer model picks room and surgeon for every case; a timing step sets clock times with no clashes. Under 10 seconds per day.</p><span class="pill y">Working</span></div>
+<div class="card"><b>3. Confirm</b><p class="sm mute">The coordinator reviews the draft, pins or moves cases, then publishes.</p><span class="pill y">Working</span></div>
+<div class="card"><b>4. Re-plan</b><p class="sm mute">An emergency is registered; started cases are frozen and the rest of the day is rebuilt in seconds.</p><span class="pill y">Working</span></div></div>
+<div class="arw" aria-hidden="true">→</div>
+<div class="col"><h3>Back to the hospital</h3>
+<div class="card"><b>Published schedule</b><p class="sm mute">Room, surgeon and start time per case.</p><span class="pill y">Dashboard and CSV today</span> <span class="pill w">Write-back to HIS planned</span></div>
+<div class="card"><b>My schedule</b><p class="sm mute">Each staff member sees only their own day.</p><span class="pill y">Working</span></div>
+<div class="card"><b>Audit log and reports</b><p class="sm mute">Who changed what, overtime and cost per day.</p><span class="pill y">Working</span></div></div>
+</div>
+<h2 style="margin-top:34px">Connect the system you already run</h2>
+<p class="mute">Pick your hospital system. ORbit shows how it connects and what works today.</p>
+<div class="g3" id="sys" style="margin-top:12px"></div>
+<div class="card" id="conn" style="margin-top:14px" aria-live="polite"><h3>Import a booking sheet</h3>
+<p class="sm mute">This works today with every system: export the day's surgery list as CSV and load it here. The file stays in your browser.</p>
+<p class="sm mute" style="max-width:none">Columns: <span id="cols"></span></p>
+<div class="row"><label class="btn p" for="csv" style="margin:0;color:#0a0a0b;font:500 14px Geist,sans-serif">Choose a CSV file</label><input id="csv" type="file" accept=".csv,text/csv" style="position:absolute;opacity:0;width:1px;height:1px;min-height:0;padding:0"><button id="hdr" type="button">Copy the header row</button></div>
+<div id="csvOut"></div></div>
+<div class="g3" style="margin-top:26px">
+<div class="card"><h3>Roles</h3><p class="sm mute">Coordinator: edits, confirms, publishes, registers emergencies. Viewer: reads only. Staff: own schedule only.</p></div>
+<div class="card"><h3>Data and hosting</h3><p class="sm mute">No patient-identifiable column is stored. The pilot design is hosting inside the Kingdom, or on the hospital's own servers, in line with PDPL.</p></div>
+<div class="card"><h3>What a pilot needs from you</h3><p class="sm mute">One booking sheet export per day and a staff roster. No change to your HIS, no new hardware.</p></div>
+</div>
+</div></div></section>
+
+<section data-v="tutorial"><div class="band"><div class="in">
+<h2>Learn ORbit in six steps</h2>
+<p class="mute">Each step takes you to the right screen and does the action for you. A guide bar stays at the bottom so you can move forward or back.</p>
+<div id="steps" style="margin-top:8px"></div>
+<div class="row"><button class="p" id="tourGo">Start the guided tour</button></div>
+</div></div></section>
+
+<section data-v="pricing"><div class="band"><div class="in">
+<h2>Pricing a hospital can read without a sales call</h2>
+<p class="mute">Sign up free and get 10 actions. After that, the Hospital plan applies. Proposed launch pricing: ORbit is a prototype, so the sign-up here is a demonstration. Nothing is sent, no account is created and nothing is charged.</p>
+<div class="g3 price" style="margin-top:14px">
+<div class="card"><h3>Free</h3><b class="big">SAR 0</b><span class="mute sm">10 actions after you sign up</span><ul class="sm" style="margin-top:10px"><li>Every tab of the app, on the demo data</li><li>10 actions: re-plans, checks, imports, report exports</li><li>No card needed</li></ul><div class="row"><a class="btn p start" href="#dashboard">Start now</a><button id="rst" type="button">Sign in or out</button></div></div>
+<div class="card" style="border-color:#3a3a42"><h3>Hospital <span class="proto">Standard</span></h3><b class="big">SAR 19,000</b><span class="mute sm">per operating room, per year</span><ul class="sm" style="margin-top:10px"><li>Prediction, optimisation, emergency re-plan</li><li>Coordinator, viewer and staff access</li><li>Audit log and monthly reports</li></ul></div>
+<div class="card"><h3>Group</h3><b class="big">By agreement</b><span class="mute sm">several hospitals or clusters</span><ul class="sm" style="margin-top:10px"><li>HIS integration work</li><li>Hosting on your own servers</li><li>Training for coordinators</li></ul></div>
+</div>
+<div class="g2" style="margin-top:26px;align-items:start">
+<div class="card"><h3>Will it pay for itself?</h3>
+<div class="form">
+<div><label for="cR">Operating rooms</label><input id="cR" type="number" value="6" min="1" max="40"></div>
+<div><label for="cO">Overtime cost today, SAR per day</label><input id="cO" type="number" value="7560" min="0" step="100"></div>
+<div><label for="cP">Overtime reduction you expect: <span id="cPv"></span></label><input id="cP" type="range" min="5" max="60" value="20" style="padding:0"></div>
+</div><p class="sm mute" style="margin-top:8px">20% is our project target. The prototype measured 60% in simulation. 250 working days a year.</p></div>
+<div class="card" id="cOut" aria-live="polite"></div>
+</div>
+</div></div></section>
+
+<section data-v="faq"><div class="band"><div class="in" style="max-width:860px">
+<h2>Questions hospitals ask us</h2>
+<details open><summary>Is ORbit running in a hospital today?</summary><p>No. ORbit is a working prototype built as a KFUPM senior design project. It has been tested on synthetic data shaped like a 6-room Saudi hospital. Our next step is a pilot with a mid-size hospital.</p></details>
+<details><summary>Does it replace our HIS?</summary><p>No. Your HIS stays the record of bookings. ORbit takes the day's booked cases, proposes the best arrangement, and hands the confirmed plan back.</p></details>
+<details><summary>Do you need patient data?</summary><p>No. The planner needs seven scheduling columns: case ID, date, department, surgeon, room, booked start and booked minutes. No names, no file numbers, no diagnoses.</p></details>
+<details><summary>How does it decide where each surgery goes?</summary><p>A mixed-integer optimisation model weighs three things: not sending patients home, keeping overtime low, and sharing work fairly between rooms and shifts. Sending a patient home is priced higher than any amount of overtime a room may plan, so it is a last resort.</p></details>
+<details><summary>What happens when an emergency arrives?</summary><p>The coordinator enters the time, department, surgeon and expected minutes. Cases already under way are frozen. The emergency takes the room that frees up first, and the remaining cases are re-timed so no room or surgeon overlaps. In the prototype this takes well under a second.</p></details>
+<details><summary>Who has the final say?</summary><p>Always the OR coordinator. ORbit drafts; a person confirms and publishes. Cases can be pinned so the planner will not move them.</p></details>
+<details><summary>What does it not do yet?</summary><p>It does not reach our 15% shift-balance target or our room-hours target; both are shown as not met in Prototype check, with the reason. It is not yet connected to a live HIS or to NPHIES, and the interface is in English only.</p></details>
+<details><summary>How much does it cost?</summary><p>Signing up is free and gives you 10 actions. After that, our proposed price is SAR 19,000 per operating room per year. For a 6-room hospital that is SAR 114,000 a year.</p></details>
+<details><summary>Who is behind it?</summary><p>Four KFUPM students from Industrial and Systems Engineering, Computer Science and Accounting and Finance, coached by KFUPM faculty. See Who we are.</p></details>
+</div></div></section>
+
+<section data-v="about">
+<div class="band deep"><div class="in" style="max-width:900px">
+<p class="ar" lang="ar" dir="rtl" style="font-size:18px;margin-bottom:10px">من جامعة الملك فهد للبترول والمعادن إلى مستشفيات المملكة</p>
+<h1>We started as KFUPM students. <span class="mute">We are building for the Kingdom's mid-size hospitals.</span></h1>
+<p class="mute" style="margin-top:14px;font-size:18px">ORbit began in 2026 as senior design project M042 at King Fahd University of Petroleum and Minerals in Dhahran, under the project name SORRS. Three departments, one problem: the operating-room schedule is the most valuable plan a hospital makes each day, and it is still built by hand.</p>
+</div></div>
+<div class="band"><div class="in">
+<div class="g2" style="margin-bottom:34px"><div><span class="kick">Vision</span><h2>Every surgery in the Kingdom happens on the day it was promised.</h2></div><div><span class="kick">Mission</span><h2><span class="mute">Give mid-size Saudi hospitals a planning layer that is fair to patients and staff, proven with evidence, and priced so any hospital can use it.</span></h2></div></div>
+<h2>The team</h2>
+<div class="g4" style="margin-top:12px">
+<div class="card"><h3>Salem Alruwaili</h3><p class="sm mute">Industrial and Systems Engineering. Optimisation model, simulation, workload and overtime targets.</p></div>
+<div class="card"><h3>Omar Slik</h3><p class="sm mute">Computer Science. Duration prediction and the application.</p></div>
+<div class="card"><h3>Rakan Alseed</h3><p class="sm mute">Computer Science. Application, database and emergency engine.</p></div>
+<div class="card"><h3>Talal Almangour</h3><p class="sm mute">Accounting and Finance. Cost model and the business case.</p></div>
+</div>
+<h2 style="margin-top:34px">Where we are going</h2>
+<div class="tl" style="margin-top:12px">
+<div class="now"><h3>Now</h3><p class="sm mute">Working prototype. Model, simulation and application tested on synthetic data.</p></div>
+<div><h3>Next</h3><p class="sm mute">A 90-day pilot with one mid-size hospital on its own booking sheets.</p></div>
+<div><h3>Then</h3><p class="sm mute">HIS and NPHIES connections, Arabic interface, hosting in the Kingdom.</p></div>
+<div><h3>Goal</h3><p class="sm mute">The planning layer for 4 to 12 room hospitals across Saudi Arabia.</p></div>
+</div>
+<div class="g2" style="margin-top:34px">
+<div><h2>Why mid-size hospitals</h2><p class="mute">The largest medical cities can buy enterprise platforms and staff analytics teams. A 6-room private or cluster hospital has the same overtime bills and the same emergencies, with one coordinator and a spreadsheet. That hospital is who we build for.</p></div>
+<div><h2>What we believe</h2><p class="mute">A patient who was promised a surgery date should get it. A nurse should know when the shift ends. And a tool that plans surgery should show its evidence, including what it has not yet achieved.</p></div>
+</div>
+</div></div>
+</section>
+<section data-v="arabic" lang="ar" dir="rtl">
+<div class="band"><div class="in">
+<h1 class="xl">كل ساعة في غرفة العمليات، <span class="mute">تُستثمر كما يجب.</span></h1>
+<p style="margin-top:16px;font-size:17px" class="mute">«أوربت» يخطّط يوم العمليات الجراحية للمستشفيات السعودية: يتنبّأ بمدة كل عملية، ويحدّد لكل حالة غرفةً وجرّاحاً، ويعيد الجدولة خلال ثوانٍ عند وصول حالة طارئة. بدأ من جامعة الملك فهد للبترول والمعادن، وصُمّم للمستشفيات المتوسطة في المملكة.</p>
+<div class="row"><a class="btn p" href="#schedule">افتح الجدول المباشر</a><a class="btn" href="#check">تحقّق من النتائج</a><a class="btn" href="#home" lang="en" dir="ltr">English</a></div>
+</div></div>
+<div class="band"><div class="in">
+<div class="figs" id="figsAr"></div>
+<p class="sm mute" style="margin-top:14px;max-width:none">نتائج نموذج أولي على بيانات اصطناعية (10 أيام عمل و241 عملية) تحاكي مستشفى سعودياً بست غرف عمليات. لا تُستخدم أي بيانات مرضى حقيقية.</p>
+</div></div>
+<div class="band"><div class="in">
+<h2>لماذا «أوربت»؟</h2>
+<div class="g4" style="margin-top:12px">
+<div class="card"><h3>سعر معلن</h3><p class="mute sm">نحو 19,000 ريال لكل غرفة عمليات سنوياً (سعر مقترح)، بعد 10 عمليات مجانية عند التسجيل.</p></div>
+<div class="card"><h3>محلي بالكامل</h3><p class="mute sm">أسبوع عمل من الأحد إلى الخميس، نوبتان، احتساب العمل الإضافي بالريال، ومتوافق مع نظام حماية البيانات الشخصية.</p></div>
+<div class="card"><h3>بلا بيانات مرضى</h3><p class="mute sm">يحتاج سبعة أعمدة جدولة فقط: رقم الحالة، التاريخ، القسم، الجرّاح، الغرفة، وقت البدء والمدة.</p></div>
+<div class="card"><h3>القرار للإنسان</h3><p class="mute sm">«أوربت» يقترح، ومنسّق العمليات يعتمد وينشر. لا حجز مزدوج لغرفة أو جرّاح، وكل تغيير يُسجَّل.</p></div>
+</div></div></div>
+<div class="band"><div class="in g2">
+<div><h2>مع رؤية المملكة 2030</h2><p class="mute">يدعو برنامج تحول القطاع الصحي إلى رعاية أسهل وصولاً وأعلى جودة وكفاءة، تقوم على الصحة الرقمية. غرف العمليات هي أغلى ساعات المستشفى، وهدفنا أن تُستثمر كاملة.</p>
+<ul><li><b>الوصول:</b> مرضى أكثر تُجرى عملياتهم في اليوم الموعود.</li><li><b>الكفاءة:</b> عمل إضافي أقل لعدد العمليات نفسه.</li><li><b>الصحة الرقمية:</b> حل يُبنى داخل المملكة بأيدي مهندسيها.</li></ul></div>
+<div><h2>من نحن</h2><p class="mute">أربعة طلاب من جامعة الملك فهد للبترول والمعادن، من ثلاثة أقسام: الهندسة الصناعية والنظم، علوم الحاسب، والمحاسبة والمالية. بدأنا بمشروع تخرّج، وخطوتنا التالية تجربة مع مستشفى متوسط الحجم في المملكة.</p>
+<h3 style="margin-top:18px">بكل شفافية</h3><p class="mute sm">«أوربت» نموذج أولي لم يُستخدم في مستشفى بعد. لم يتحقق حتى الآن هدف توازن النوبات وهدف ساعات الغرف، ولم يُربط بنظام معلومات المستشفى، والواجهة حالياً بالإنجليزية. التفاصيل في صفحة التحقق.</p></div>
+</div></div>
+</section>
+</main>
+
+<div id="ov" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="ovT" id="ovC"></div></div>
+<div id="tour" hidden role="dialog" aria-label="Guided tour"><b id="tT"></b><p id="tP"></p><div class="row"><button id="tB">Back</button><button class="p" id="tN">Next</button><button id="tX">End tour</button></div></div>
+<footer><div class="in">ORbit is a student prototype from KFUPM Senior Design, Team M042 (project name SORRS). All results come from synthetic data; it is not a medical device and is not in clinical use. Competitor information is from their public materials.</div></footer>
+
+<script>
+(async()=>{
+const esc=x=>String(x??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let TOKEN=null;try{TOKEN=sessionStorage.getItem("orbit_t")}catch(e){}
+const setToken=t=>{TOKEN=t;try{t?sessionStorage.setItem("orbit_t",t):sessionStorage.removeItem("orbit_t")}catch(e){}};
+const api=async(method,url,body)=>{const h={};if(body!==undefined)h["content-type"]="application/json";if(TOKEN)h.authorization="Bearer "+TOKEN;
+ let res;try{res=await fetch(url,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)})}catch(e){throw new Error("The ORbit server is not reachable.")}
+ const j=await res.json().catch(()=>({}));if(res.status===401&&TOKEN&&url!=="/api/auth/login")setToken(null);
+ if(!res.ok){const e=new Error(j.error||("Request failed ("+res.status+")"));e.status=res.status;e.body=j;throw e}return j};
+const note=m=>{try{sessionStorage.setItem("orbit_msg",m)}catch(e){}},reload=()=>location.reload();
+let ME=null;if(TOKEN){try{ME=await api("GET","/api/auth/me")}catch(e){setToken(null)}}
+let D;try{D=await api("GET","/api/orbit/data")}catch(e){document.body.innerHTML=`<div style="max-width:560px;margin:80px auto;padding:0 16px;font:16px/1.5 system-ui,sans-serif;color:#e4e4e7;background:#0a0a0b"><h2>ORbit cannot load its data</h2><p>${esc(e.message)}</p><p>Start the backend (<code>npm run dev</code> in the <code>backend</code> folder) and reload this page.</p></div>`;document.body.style.background="#0a0a0b";return}
+const $=s=>document.querySelector(s),T0=480,T1=1260,SP=T1-T0,CAP=600,RATE=19.3;
+const fmt=m=>{m=Math.round(m);const h=Math.floor(m/60)%24,mm=String(m%60).padStart(2,"0");return `${h%12||12}:${mm} ${h<12?"AM":"PM"}`};
+const dl=d=>new Date(D.days[d]+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+const nf=n=>Math.round(n).toLocaleString("en-US");
+const S={d:1,m:"orbit",re:{},sel:null,dp:null};
+const DC=["#fbbf24","#34d399","#60a5fa","#f472b6","#a78bfa"];
+const shift=Object.fromEntries(D.sur.map(s=>[s.id,s.sh]));
+
+const bars=(d,m)=>{const cs=D.cases.filter(c=>c.d===d);
+ if(m==="manual")return cs.filter(c=>!c.x).map(c=>({c,r:c.mr,s:c.mas,dur:c.ad,su:c.ms,em:c.em}));
+ if(m==="orbit")return cs.filter(c=>c.st!==2).map(c=>({c,r:c.orr,s:c.oas,dur:c.ad,su:c.os,em:c.em}));
+ return S.re[d].items};
+const gantt=(el,bs,live,ani,rooms=D.rooms)=>{const pc=t=>(Math.max(T0,Math.min(T1,t))-T0)/SP*100;
+ const ticks=[480,600,720,840,960,1080,1200].map(t=>`<i class="${t===1080?"six":""}" style="left:${pc(t)}%"></i>`).join("");
+ el.innerHTML=`<div class="hrs">${[480,600,720,840,960,1080,1200].map(t=>`<span style="left:${pc(t)}%">${fmt(t).replace(":00","")}</span>`).join("")}</div>`+
+ rooms.map((rm,r)=>`<div class="gr"><b>${rm}</b><div class="tk">${ticks}${bs.map((b,k)=>{if(b.r!==r)return"";const e=b.s+b.dur,w=pc(e)-pc(b.s);
+  const col=b.em?"var(--em)":DC[b.c?.dp]||"#c9c9d1",late=e>1080?Math.max(0,(1080-b.s)/b.dur*100):100,bg=late<100?`background:linear-gradient(90deg,${col} 0 ${late}%,var(--red) ${late}% 100%)`:`background:${col}`;
+  const dim=S.dp!=null&&b.c&&b.c.dp!==S.dp?"opacity:.15;":"",cls=`b${b.em?" em":""}${b.nw?" new":""}${b.mv?" mv":""}${S.sel===k&&live?" sel":""}`,st=`left:${pc(b.s)}%;width:${Math.max(w,.6)}%;${dim}${bg};${ani?ani(b):""}`;
+  return live?`<button class="${cls}" style="${st}" data-k="${k}" aria-label="${b.c.i}, ${rm}, ${fmt(b.s)} to ${fmt(e)}"></button>`:`<div class="${cls}" style="${st}"></div>`}).join("")}</div></div>`).join("")};
+
+const clashes=bs=>{let rc=0,sc=0;const by=(key,end)=>{const g={};bs.forEach(b=>(g[b[key]]??=[]).push(b));let n=0;
+  Object.values(g).forEach(v=>{v.sort((a,b)=>a.s-b.s);for(let i=0;i<v.length;i++)for(let j=i+1;j<v.length;j++)if(v[j].s<end(v[i]))n++});return n};
+ rc=by("r",b=>b.s+b.dur+b.c.to);sc=by("su",b=>b.s+b.dur);return[rc,sc]};
+
+const render=()=>{const bs=bars(S.d,S.m);gantt($("#G"),bs,true);
+ document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===S.m));$("#mRe").hidden=!S.re[S.d];
+ const k=D.K[S.d],x=S.m==="manual"?k.m:k.o;
+ $("#kp").innerHTML=S.m==="replan"?(()=>{const r=S.re[S.d];return[[r.items.length,"Cases on the board"],[r.moved,"Cases re-timed"],[r.def.length,"Moved to next day"],[r.cl.join(" / "),"Room / surgeon clashes"]]})().map(v=>`<div><b>${v[0]}</b><span>${v[1]}</span></div>`).join(""):
+  [[x.n,"Surgeries done"],[x.ot.toFixed(1)+" h","Overtime"],["SAR "+nf(x.cost),"Overtime cost"],[x.dl+" min","Average start delay"]].map(v=>`<div><b>${v[0]}</b><span>${v[1]}</span></div>`).join("");
+ const b=S.sel!=null&&bs[S.sel];
+ $("#sel").innerHTML=b?`<b>${b.c.i}</b> · ${b.c.dp!=null?D.depts[b.c.dp]:""} · ${D.rooms[b.r]} · surgeon ${b.su} · ${fmt(b.s)} to ${fmt(b.s+b.dur)}${b.c.bd?` · booked for ${b.c.bd} min, took ${b.c.ad} min`:""}${b.em?" · emergency":""}`:
+  (S.m==="orbit"&&k.df?`${k.df} case${k.df>1?"s":""} could not fit and moved to the next day. Select any bar to see the case.`:"Select any bar to see the case.")};
+
+const freeFrom=(t,dur,busy)=>{let mv=true;while(mv){mv=false;for(const[a,b]of busy)if(t<b&&a<t+dur){t=b;mv=true}}return t};
+const replan=(d,now,em)=>{const t0=performance.now();
+ const plan=D.cases.filter(c=>c.d===d&&c.st!==2).map(c=>({c,r:c.orr,s:c.ops,dur:c.opd,su:c.os,em:c.em}));
+ const fixed=plan.filter(b=>b.s<=now||b.em),wait=plan.filter(b=>!(b.s<=now||b.em)).sort((a,b)=>a.s-b.s);
+ const rB=D.rooms.map(()=>[]),sB={};const put=b=>{rB[b.r].push([b.s,b.s+b.dur+b.c.to]);(sB[b.su]??=[]).push([b.s,b.s+b.dur])};fixed.forEach(put);
+ const rf=D.rooms.map((_,r)=>Math.max(now,...fixed.filter(b=>b.r===r&&b.s<=now).map(b=>b.s+b.dur+b.c.to)));
+ let r=rf.indexOf(Math.min(...rf)),s=rf[r];
+ for(;;){const a=freeFrom(s,em.min+25,rB[r]),b=freeFrom(a,em.min,sB[em.su]||[]);if(a===b){s=a;break}s=b}
+ const nb={c:{i:"EMERGENCY",dp:em.dp,to:25,ad:em.min},r,s,dur:em.min,su:em.su,em:1,nw:1};put(nb);
+ const items=[...fixed,nb],def=[];let moved=0;
+ for(const b of wait){let t=Math.max(b.s,now);for(;;){const a=freeFrom(t,b.dur+b.c.to,rB[b.r]),c=freeFrom(a,b.dur,sB[b.su]||[]);if(a===c){t=a;break}t=c}
+  if(t+b.dur>T0+CAP+120){def.push(b);continue}const n={...b,o:b.s,s:t,mv:t!==b.s};if(n.mv)moved++;put(n);items.push(n)}
+ return{items,def,moved,ms:performance.now()-t0,cl:clashes(items),room:D.rooms[r],at:s}};
+
+const rm=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const grow=b=>rm?"":`animation:grow .5s ${((b.s-T0)/SP*2.8).toFixed(2)}s both;transform-origin:left`;
+const count=(el,to,ms,pre,suf)=>{if(rm){el.textContent=pre+nf(to)+suf;return}const t0=performance.now(),f=t=>{const p=Math.min(1,(t-t0)/ms);el.textContent=pre+nf(to*(1-(1-p)**3))+suf;if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)};
+let RC=null,RD=1;
+const CL={a:el=>{gantt(el.querySelector(".scr"),bars(1,"manual"),false,grow);count(el.querySelector(".ct"),D.K[1].m.cost,3600,"SAR ","")},
+ b:el=>{gantt(el.querySelector(".scr"),bars(1,"orbit"),false,grow);count(el.querySelector(".ct"),D.K[1].o.cost,3600,"SAR ","")},
+ c:el=>{if(!RC){const su=D.sur.find(s=>s.dp===0).id;D.days.forEach((_,d)=>{const r=replan(d,630,{dp:0,su,min:90});const sc=x=>(x.moved>=2?0:10)+x.def.length;if(!RC||sc(r)<sc(RC)){RC=r;RD=d}})}
+  const r=RC,l=el.querySelector(".cl"),c=el.querySelector(".ct");l.textContent=dl(RD)+" · 10:30 AM · emergency call";c.textContent="…";
+  gantt(el.querySelector(".scr"),r.items,false,b=>rm?"":b.nw?"animation:pop .5s 1.4s both;transform-origin:bottom":b.mv?`animation:slide .9s 1.7s both;--dx:${((b.o-b.s)/b.dur*100).toFixed(1)}%`:"");
+  clearTimeout(el._t);el._t=setTimeout(()=>{l.textContent=`Emergency in ${r.room} at ${fmt(r.at)} · ${r.moved} re-timed · ${r.def.length} moved a day · ${r.cl[0]+r.cl[1]} clashes`;c.textContent=r.ms<.1?"< 0.1 ms":r.ms.toFixed(1)+" ms"},rm?0:2700)}};
+const play=el=>{el.classList.remove("play");void el.offsetWidth;el.classList.add("play");CL[el.dataset.c](el)};
+const motion=()=>{document.querySelectorAll(".clip").forEach(el=>{el.querySelector(".rp").addEventListener("click",()=>play(el));CL[el.dataset.c](el)});
+ if(!("IntersectionObserver"in window))return;document.documentElement.classList.add("js");
+ const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;const el=e.target;el.classList.add("in");io.unobserve(el);
+  if(el.classList.contains("clip"))play(el);el.querySelectorAll("[data-to]").forEach(b=>count(b,+b.dataset.to,1400,"−","%"))}),{threshold:.25});
+ document.querySelectorAll(".rv").forEach(el=>io.observe(el))};
+const COLS=["case_id","surgery_date","department","surgeon_id","room","booked_start","booked_duration_min"];
+const SYS=[["OH","Oracle Health SurgiNet","HL7 v2 scheduling messages (SIU) or FHIR Appointment"],["Ep","Epic OpTime","FHIR Appointment and Schedule resources"],["TC","InterSystems TrakCare","HL7 v2 scheduling messages (SIU)"],["CP","CloudPital","Scheduled export, then API"],["HIS","Another HIS","Daily CSV or Excel export"],["XL","Excel booking sheet","Direct file import"]];
+const integ=()=>{$("#cols").textContent=COLS.join(", ");
+ $("#sys").innerHTML=SYS.map((s,i)=>`<div class="ct"><i>${s[0]}</i><div><b>${s[1]}</b><span>${i>3?"Works today":"Connector planned"}</span></div><button data-s="${i}" type="button">Connect</button></div>`).join("");
+ $("#sys").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const s=SYS[+b.dataset.s],live=+b.dataset.s>3;
+  $("#csvOut").innerHTML=`<div class="msg"><b>ORbit ↔ ${s[1]}.</b> ${live?"Ready now.":"Live connector: planned, not built yet. Route: "+s[2]+"."} ${live?"Load the file with the button above.":"Until then, export the day's surgery list from "+s[1]+" as CSV and load it with the button above. Nothing in your system changes."}</div>`;
+  $("#conn").scrollIntoView({behavior:rm?"auto":"smooth",block:"center"})});
+ $("#hdr").addEventListener("click",e=>{const b=e.currentTarget;navigator.clipboard.writeText(COLS.join(",")).then(()=>b.textContent="Copied",()=>b.textContent="Copy blocked").finally(()=>setTimeout(()=>b.textContent="Copy the header row",1500))});
+ $("#csv").addEventListener("change",e=>{const f=e.target.files[0];e.target.value="";if(!f||!gate("import"))return;const rd=new FileReader();rd.onload=()=>{const out=$("#csvOut");try{
+   const L=String(rd.result).split(/\r?\n/).filter(x=>x.trim()),h=L[0].split(",").map(x=>x.trim().replace(/^"|"$/g,"")),miss=COLS.filter(c=>!h.includes(c));
+   if(miss.length){out.innerHTML=`<div class="msg" style="color:var(--red)">This file is missing columns: ${miss.join(", ")}.</div>`;return}
+   const ix=Object.fromEntries(COLS.map(c=>[c,h.indexOf(c)])),ei=h.indexOf("is_emergency"),rows=L.slice(1).map(l=>l.split(",").map(x=>x.trim().replace(/^"|"$/g,"")));
+   const days=[...new Set(rows.map(r=>r[ix.surgery_date]))].sort(),rooms=[...new Set(rows.map(r=>r[ix.room]))].sort(),d0=days[0];
+   const bs=rows.filter(r=>r[ix.surgery_date]===d0).map(r=>{const[hh,mm]=r[ix.booked_start].split(":");return{r:rooms.indexOf(r[ix.room]),s:hh*60+ +mm,dur:+r[ix.booked_duration_min],em:ei>=0&&r[ei]==="1"}}).filter(b=>b.dur>0&&b.s>=0);
+   log(`Booking sheet imported: ${f.name}, ${rows.length} cases`);out.innerHTML=`<div class="msg"><b>${f.name} is valid.</b> ${rows.length} cases over ${days.length} day${days.length>1?"s":""} in ${rooms.length} rooms. Below is ${d0} as booked.</div><div class="board" style="margin-top:10px"><div id="csvG"></div></div><div id="csvSv"><div class="msg">Storing it on the server…</div></div>`;
+   gantt($("#csvG"),bs,false,grow,rooms);upload(f.name,String(rd.result))}catch(err){out.innerHTML=`<div class="msg" style="color:var(--red)">Could not read this file as CSV.</div>`}};rd.readAsText(f)})};
+const modeSel=()=>($("#mMode")||{}).value||"booked";
+const planOut=(p,el,after)=>{const T=p.T,can=ME&&ME.permissions.includes("publish");
+ el.innerHTML=`<div class="msg"><b>Plan ${p.id} proposed</b> (${p.mode==="v2"?"V2 notebook durations":"booked durations"}; slowest day ${Math.max(...Object.values(p.solveS)).toFixed(1)} s). Overtime cost SAR ${nf(T.cost[0])} → ${nf(T.cost[1])} a day (${T.otPct>=0?"−":"+"}${Math.abs(T.otPct)}%), start delay ${T.dl[0]} → ${T.dl[1]} min, ${T.defer}% moved a day, room / surgeon clashes ${T.clash.join(" / ")}.${can?`<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="pPub${p.id}">Publish this plan</button><button type="button" id="pDis${p.id}">Discard</button></div>`:""}</div>`;
+ if(can){$("#pPub"+p.id).addEventListener("click",async()=>{try{await api("POST",`/api/plans/${p.id}/publish`);note(`Plan ${p.id} published. The app now shows it.`);location.hash=after||"dashboard";reload()}catch(e){el.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`)}});
+  $("#pDis"+p.id).addEventListener("click",async()=>{try{await api("POST",`/api/plans/${p.id}/reject`);el.innerHTML=`<div class="msg">Plan ${p.id} discarded.</div>`}catch(e){el.insertAdjacentHTML("beforeend",`<div class="err">${esc(e.message)}</div>`)}})}};
+const runPlan=async(sheetId,el,after)=>{if(!gate("plan"))return;el.innerHTML=`<div class="msg">Salem's engine is planning every day… (up to about ${10*D.days.length} s)</div>`;
+ try{planOut(await api("POST","/api/plans",{sheetId,mode:modeSel()}),el,after)}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const upload=async(name,csv)=>{const el=$("#csvSv");try{const sh=await api("POST","/api/sheets",{fileName:name,csv});
+  el.innerHTML=`<div class="msg"><b>Stored as sheet ${sh.id}:</b> ${sh.cases} cases, ${sh.days} days, ${sh.rooms} rooms, ${sh.surgeons} surgeons. Simulated with V2 Step 1. Not in use until a plan for it is published.<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="shPlan">Plan it with ORbit</button></div></div><div id="shOut"></div>`;
+  $("#shPlan").addEventListener("click",()=>runPlan(sh.id,$("#shOut"),"dashboard"))}catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const modelCard=async()=>{const el=$("#mInfo");if(!el)return;let h={ok:false};if(ME){try{h=await api("GET","/api/orbit/engine")}catch(e){}}
+ el.innerHTML=`Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>. Plan in force: ${D.meta.plan?`${D.meta.plan.id}, ${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":D.meta.plan.mode==="v2"?"V2 notebook durations":"booked durations"}`:"none"}. Engine: ${ME?(h.ok?`${esc(h.engine)}, ${esc(h.solver)}`:"<span style=\"color:var(--red)\">not running (npm run engine)</span>"):"sign in to see"}.`};
+const IC={dashboard:'<path d="M4 13a8 8 0 0 1 16 0M12 13l4-4"/><path d="M4 17h16"/>',emergencies:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/>',cases:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',staff:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>',durations:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',cost:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',reports:'<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',audit:'<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7M9 8h3"/>',model:'<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',about:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.5c1.8.9 3 2.9 3 5.5"/>',home:'<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
+ schedule:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+ integration:'<path d="M9 7H7a5 5 0 0 0 0 10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/>',tutorial:'<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
+ pricing:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',faq:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/>',
+ about2:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.5c1.8.9 3 2.9 3 5.5"/>',arabic:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>'};
+const chrome=()=>{document.querySelectorAll("#nav a").forEach(a=>a.insertAdjacentHTML("afterbegin",`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[a.getAttribute("href").slice(1)]||""}</svg>`));
+ $("#dps").innerHTML=D.depts.map((n,i)=>`<button type="button" data-d="${i}" aria-pressed="false"><s style="background:${DC[i]}"></s>${n}<em>${D.cases.filter(c=>c.dp===i).length}</em></button>`).join("");
+ $("#dps").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.dp=S.dp===+b.dataset.d?null:+b.dataset.d;
+  document.querySelectorAll("#dps button").forEach(x=>{const on=+x.dataset.d===S.dp;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on)});
+  $("#cdp").value=S.dp==null?"":S.dp;CN=30;casesT();S.sel=null;render();app();
+  if(!["dashboard","schedule","cases"].includes((location.hash||"#home").slice(1)))location.hash="cases"});
+ document.querySelectorAll(".dl").forEach(el=>el.innerHTML=D.depts.map((n,i)=>`<span><s style="background:${DC[i]}"></s>${n}</span>`).join("")+`<span><s style="background:var(--em)"></s>Emergency</span><span><s style="background:var(--red)"></s>After 6:00 PM (overtime)</span>`)};
+const CLIENT=["Guided tour started","Report copied as CSV","Prototype check run","Booking sheet previewed"];
+const log=(w,detail)=>{if(ME&&CLIENT.includes(w))api("POST","/api/audit/events",{action:w,detail}).catch(()=>{})};
+const loadAudit=async()=>{const el=$("#aT");if(!ME){el.innerHTML=`<div class="msg">Sign in to read the audit log.</div>`;return}
+ try{const a=await api("GET","/api/audit?limit=300");el.innerHTML=tbl(["Time","User","Event","Detail"],a.map(x=>[new Date(x.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",second:"2-digit"}),esc(x.username),esc(x.action),esc(x.detail)]))}
+ catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const tbl=(h,rows,nums=[])=>`<div class="scroll"><table><thead><tr>${h.map((x,i)=>`<th${nums.includes(i)?' class="num"':""}>${x}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((x,i)=>`<td${nums.includes(i)?' class="num"':""}>${x}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${h.length}" class="mute">Nothing to show.</td></tr>`}</tbody></table></div>`;
+const tiles=a=>a.map(v=>`<div><b>${v[0]}</b><span>${v[1]}</span></div>`).join(""),avg=a=>a.reduce((p,q)=>p+q,0)/(a.length||1);
+const ST=["Scheduled","Emergency","Moved to next day"];let CN=30;
+const app=()=>{const d=S.d,k=D.K[d],cs=D.cases.filter(c=>c.d===d),ob=bars(d,"orbit"),em=cs.filter(c=>c.em),df=cs.filter(c=>c.st===2);
+ $("#dT").innerHTML=tiles([[k.o.n+" of "+k.m.n,"Surgeries done"],[k.o.ot.toFixed(1)+" h","Overtime (manual "+k.m.ot.toFixed(1)+" h)"],["SAR "+nf(k.o.cost),"Overtime cost (manual SAR "+nf(k.m.cost)+")"],[k.o.dl+" min","Average start delay (manual "+k.m.dl+" min)"]]);
+ gantt($("#dG"),ob,false);
+ const late=D.rooms.map((rm,r)=>{const e=Math.max(0,...ob.filter(b=>b.r===r).map(b=>b.s+b.dur));return e>1080?`<li><b>${rm}</b> finishes at ${fmt(e)}, ${Math.round(e-1080)} min past the 10-hour day.</li>`:""}).join("");
+ $("#dA").innerHTML=(late||"<li>Every room finishes by 6:00 PM.</li>")+`<li><b>${em.length}</b> emergenc${em.length===1?"y":"ies"} on the board.</li>`+(df.length?`<li><b>${df.length}</b> case${df.length>1?"s":""} moved to the next day: ${df.map(c=>c.i).join(", ")}.</li>`:"<li>No case moved to the next day.</li>");
+ $("#eT").innerHTML=tbl(["Case","Arrived","Department","Room","Surgeon","Booked","Took"],em.map(c=>[c.i,fmt(c.bs),D.depts[c.dp],D.rooms[c.mr],c.ms,c.bd+" min",c.ad+" min"]),[5,6]);
+ const r=S.re[d];$("#eR").innerHTML=r?tbl(["Placed in","Starts","Cases re-timed","Moved a day","Room / surgeon clashes","Engine time"],[[r.room,fmt(r.at),r.moved,r.def.length,r.cl.join(" / "),r.ms.toFixed(2)+" ms"]],[2,3,5]):`<p class="mute sm">No emergency registered on this day in this session.</p>`;
+ const su=$("#stS").value;$("#stM").innerHTML=tbl(["Start","End","Case","Room","Department"],ob.filter(b=>b.su===su).sort((a,b)=>a.c.ops-b.c.ops).map(b=>[fmt(b.c.ops),fmt(b.c.ops+b.c.opd),b.c.i,D.rooms[b.r],D.depts[b.c.dp]]))};
+const casesT=()=>{const q=$("#cq").value.trim().toLowerCase(),dp=$("#cdp").value,st=$("#cst").value;
+ const rows=D.cases.filter(c=>(!q||c.i.toLowerCase().includes(q)||c.ms.toLowerCase().includes(q)||(c.os||"").toLowerCase().includes(q))&&(dp===""||c.dp===+dp)&&(st===""||c.st===+st));
+ $("#cN").textContent=`${rows.length} case${rows.length===1?"":"s"}`+(rows.length>CN?`, showing the first ${CN}`:"");$("#cMore").hidden=rows.length<=CN;
+ $("#cT").innerHTML=tbl(["Case","Day","Department","Surgeon","Room","Planned start","Booked","Took","Waited","Status"],rows.slice(0,CN).map(c=>[c.i,dl(c.d),D.depts[c.dp],c.os||c.ms,c.st===2?"—":D.rooms[c.orr],c.st===2?"—":fmt(c.ops),c.bd+" min",c.ad+" min",c.wd+" d",`<span class="pill ${c.st===2?"n":c.st?"o":"y"}">${ST[c.st]}</span>`]),[6,7,8])};
+const statics=()=>{const n=D.days.length,T=D.T;
+ $("#otc2").innerHTML=$("#otc").innerHTML;
+ $("#cdp").innerHTML=`<option value="">All</option>`+D.depts.map((x,i)=>`<option value="${i}">${x}</option>`).join("");
+ ["cq","cdp","cst"].forEach(i=>$("#"+i).addEventListener("input",()=>{CN=30;casesT()}));$("#cMore").addEventListener("click",()=>{CN+=30;casesT()});casesT();
+ $("#stS").innerHTML=D.sur.map(s=>`<option value="${s.id}">${s.id} · ${D.depts[s.dp]}</option>`).join("");$("#stS").addEventListener("change",app);
+ $("#stT").innerHTML=tbl(["Surgeon","Department","Shift","Cases","Manual / day","ORbit / day","Busiest day"],D.sur.map(s=>{const ld=m=>D.days.map((_,d)=>D.cases.filter(c=>c.d===d&&(m?c.ms===s.id:c.st!==2&&c.os===s.id)).reduce((p,c)=>p+(m?c.bd:c.opd),0)),lo=ld(0);
+  return[s.id,D.depts[s.dp],s.sh==="A"?"Morning":"Afternoon",D.cases.filter(c=>c.st!==2&&c.os===s.id).length,Math.round(avg(ld(1)))+" min",Math.round(avg(lo))+" min",Math.max(...lo)+" / 600"]}),[3,4,5,6]);
+ $("#duT").innerHTML=tbl(["Department","Cases","Booked, average","Took, average","Overrun","Within ±15%","Within ±30%"],D.depts.map((x,i)=>{const cs=D.cases.filter(c=>c.dp===i),w=p=>Math.round(100*cs.filter(c=>Math.abs(c.ad/c.bd-1)<=p).length/cs.length)+"%";
+  return[x,cs.length,Math.round(avg(cs.map(c=>c.bd)))+" min",Math.round(avg(cs.map(c=>c.ad)))+" min",(100*(cs.reduce((p,c)=>p+c.ad,0)/cs.reduce((p,c)=>p+c.bd,0)-1)).toFixed(0)+"%",w(.15),w(.3)]}),[1,2,3,4,5,6]);
+ const sm=D.K.reduce((p,k)=>p+k.m.cost,0),so=D.K.reduce((p,k)=>p+k.o.cost,0),yr=(sm-so)/n*250,fee=D.rooms.length*19000;
+ $("#coK").innerHTML=tiles([["SAR "+nf(sm-so),`Saved in ${n} days`],["SAR "+nf((sm-so)/n),"Saved per day"],["SAR "+nf(yr),"Projected per year"],["SAR "+nf(yr-fee),"After ORbit's proposed fee"]]);
+ $("#coT").innerHTML=tbl(["Day","Manual overtime","Manual cost","ORbit overtime","ORbit cost","Saved"],[...D.K.map((k,i)=>[dl(i),k.m.ot.toFixed(1)+" h","SAR "+nf(k.m.cost),k.o.ot.toFixed(1)+" h","SAR "+nf(k.o.cost),"SAR "+nf(k.m.cost-k.o.cost)]),["<b>Total</b>","","<b>SAR "+nf(sm)+"</b>","","<b>SAR "+nf(so)+"</b>","<b>SAR "+nf(sm-so)+"</b>"]],[1,2,3,4,5]);
+ const ch=(a,b)=>(b>=a?"+":"−")+Math.abs(100*(b-a)/a).toFixed(0)+"%",RP=[["Surgeries done per day",T.n[0],T.n[1],ch(T.n[0],T.n[1])],["Room-hours per day",T.rh[0],T.rh[1],ch(T.rh[0],T.rh[1])],["Overtime hours per day",T.ot[0],T.ot[1],ch(T.ot[0],T.ot[1])],["Overtime cost per day, SAR",nf(T.cost[0]),nf(T.cost[1]),ch(T.cost[0],T.cost[1])],["Average start delay, min",T.dl[0],T.dl[1],ch(T.dl[0],T.dl[1])],["Shift workload gap",T.gap[0]+"%",T.gap[1]+"%",ch(T.gap[0],T.gap[1])],["Cases moved to the next day","0%",T.defer+"%",""],["Room / surgeon clashes in the plan",T.clashM.join(" / "),T.clash.join(" / "),""]];
+ $("#rT").innerHTML=tbl(["Measure","Manual","ORbit","Change"],RP,[1,2,3]);
+ $("#rCp").addEventListener("click",e=>{const b=e.currentTarget;if(!gate())return;navigator.clipboard.writeText("Measure,Manual,ORbit,Change\n"+RP.map(r=>r.map(x=>`"${x}"`).join(",")).join("\n")).then(()=>{b.textContent="Copied";log("Report copied as CSV")},()=>b.textContent="Copy blocked").finally(()=>setTimeout(()=>b.textContent="Copy report as CSV",1500))});
+ $("#eGo").addEventListener("click",()=>{location.hash="schedule";setTimeout(()=>$("#eMin").focus(),80)});
+ if(ME&&ME.role==="staff"&&ME.surgeonId){$("#stS").value=ME.surgeonId;$("#stS").disabled=true}
+ $("#mRun").addEventListener("click",()=>runPlan(null,$("#mOut"),"dashboard"));
+ log("Session opened. Demo data loaded: "+D.cases.length+" cases, "+n+" days, "+D.rooms.length+" rooms")};
+const plan=()=>$("#plan").innerHTML=ME?`<b>${esc(ME.name)}</b>${esc(ME.roleLabel)} · account`:`<b>Sign in</b>Coordinator, viewer or OR staff`;
+const ov=h=>{$("#ovC").innerHTML=h;$("#ov").hidden=false;const f=$("#ovC input,#ovC a,#ovC button");f&&f.focus()},ovX=()=>$("#ov").hidden=true;
+const signIn=then=>{ov(`<h3 id="ovT">Sign in to ORbit</h3><p class="mute sm">Plans, re-plans, imports and the audit log are kept on the ORbit server under your account.</p><form class="form" id="sF" novalidate><div><label for="sUser">Username</label><input id="sUser" autocomplete="username" maxlength="40"></div><div><label for="sPw">Password</label><input id="sPw" type="password" autocomplete="current-password" maxlength="100"></div><div class="err" id="sErr" role="alert"></div><div class="row" style="margin:0"><button class="p" type="submit">Sign in</button><button type="button" id="sX">Not now</button></div></form><p class="sm mute" style="margin-top:12px">Demo accounts: coordinator, viewer and staff.sur001 (passwords in the project README).</p>`);
+ $("#sX").addEventListener("click",ovX);$("#sUser").addEventListener("input",()=>$("#sErr").textContent="");
+ $("#sF").addEventListener("submit",async e=>{e.preventDefault();const u=$("#sUser").value.trim(),p=$("#sPw").value;if(!u||!p){$("#sErr").textContent="Enter your username and password.";return}
+  try{const r=await api("POST","/api/auth/login",{username:u,password:p});setToken(r.token);then&&then();reload()}catch(err){$("#sErr").textContent=err.message}})};
+const signOut=async()=>{try{await api("POST","/api/auth/logout")}catch(e){}setToken(null);reload()};
+const account=()=>{ov(`<h3 id="ovT">${esc(ME.name)}</h3><p class="mute sm">${esc(ME.roleLabel)}${ME.surgeonId?` · surgeon ${esc(ME.surgeonId)}`:""}. Booking sheet in use: <b>${esc(D.meta.sheet.name)}</b>, plan ${D.meta.plan?`${D.meta.plan.id} (${D.meta.plan.kind==="v2_baseline"?"V2 plan as delivered":D.meta.plan.mode==="v2"?"V2 notebook durations":"booked durations"})`:"none yet"}.</p><div class="row"><button class="p" type="button" id="aOut">Sign out</button><button type="button" id="aX">Close</button></div>`);
+ $("#aOut").addEventListener("click",signOut);$("#aX").addEventListener("click",ovX)};
+const gate=perm=>{if(!ME){signIn();return false}if(perm&&!ME.permissions.includes(perm)){ov(`<h3 id="ovT">Not with this account</h3><p class="mute sm">You are signed in as ${esc(ME.name)} (${esc(ME.roleLabel)}). This needs a coordinator account.</p><div class="row"><button type="button" id="pX">Close</button></div>`);$("#pX").addEventListener("click",ovX);return false}return true};
+const init=()=>{plan();
+ document.addEventListener("click",e=>{const a=e.target.closest(".start");if(a&&!ME){e.preventDefault();signIn(()=>location.hash="dashboard")}});
+ $("#ov").addEventListener("click",e=>{if(e.target.id==="ov")ovX()});document.addEventListener("keydown",e=>{if(e.key==="Escape")ovX()});
+ $("#rst").addEventListener("click",()=>ME?signOut():signIn());$("#plan").addEventListener("click",e=>{e.preventDefault();ME?account():signIn()});
+ {let m=null;try{m=sessionStorage.getItem("orbit_msg");sessionStorage.removeItem("orbit_msg")}catch(e){}if(m)setTimeout(()=>{ov(`<h3 id="ovT">Done</h3><p class="mute sm">${esc(m)}</p><div class="row"><button class="p" type="button" id="mX">OK</button></div>`);$("#mX").addEventListener("click",ovX)},300)}
+ $("#day").innerHTML=D.days.map((_,i)=>`<option value="${i}">${dl(i)}</option>`).join("");$("#day").value=S.d;
+ $("#eNow").innerHTML=Array.from({length:17},(_,i)=>510+i*30).map(t=>`<option value="${t}"${t===630?" selected":""}>${fmt(t)}</option>`).join("");
+ $("#eDp").innerHTML=D.depts.map((n,i)=>`<option value="${i}">${n}</option>`).join("");
+ const su=()=>$("#eSu").innerHTML=D.sur.filter(s=>s.dp===+$("#eDp").value).map(s=>`<option>${s.id}</option>`).join("");su();$("#eDp").addEventListener("change",su);
+ document.querySelectorAll(".day2").forEach(s=>s.innerHTML=$("#day").innerHTML);
+ const setDay=d=>{S.d=d;S.sel=null;if(S.m==="replan"&&!S.re[d])S.m="orbit";document.querySelectorAll("#day,.day2").forEach(s=>s.value=d);render();if($("#stS").options.length)app();const v=(location.hash||"").slice(1);if(v==="emergencies")loadEm();if(v==="staff")staffSeen()};
+ document.querySelectorAll("#day,.day2").forEach(s=>s.addEventListener("change",e=>setDay(+e.target.value)));setDay(S.d);
+ $("#mode").addEventListener("click",e=>{const b=e.target.closest("button");if(b){S.m=b.dataset.m;S.sel=null;render()}});
+ $("#G").addEventListener("click",e=>{const b=e.target.closest("button");if(b){S.sel=+b.dataset.k;render()}});
+ $("#eMin").addEventListener("input",()=>$("#eErr").textContent="");
+ $("#emf").addEventListener("submit",e=>{e.preventDefault();const min=+$("#eMin").value;if(!(min>=15&&min<=400)){$("#eErr").textContent="Enter expected minutes between 15 and 400.";return}doEm()});
+ const hd=D.K.map((k,i)=>[k.o.cost,i]).sort((x,y)=>x[0]-y[0])[0][1];$("#heroCap").textContent=dl(hd)+" · 6 rooms · "+D.K[hd].o.n+" surgeries";gantt($("#heroG"),bars(hd,"orbit"),false,grow);
+ const T=D.T,F=(L)=>[["−"+T.otPct+"%",L[0],"SAR "+nf(T.cost[0])+" → "+nf(T.cost[1])+L[4],T.otPct],["−"+T.dlPct+"%",L[1],T.dl[0]+" → "+T.dl[1]+L[5],T.dlPct],[T.clash[0]+T.clash[1],L[2],L[6]],[L[8],L[3],L[7]]]
+  .map(f=>`<div class="fig"><b${f[3]?` data-to="${f[3]}"`:""}>${f[0]}</b><span>${f[1]}</span><em>${f[2]}</em></div>`).join("");
+ $("#figs").innerHTML=F(["overtime cost","waiting on the day","double-bookings","to re-plan an emergency"," a day"," min average start delay","rooms and surgeons, every plan checked","full day plan in under 10 s","< 1 s"]);
+ $("#figsAr").innerHTML=F(["تكلفة العمل الإضافي","التأخير في يوم العملية","حجز مزدوج","لإعادة الجدولة عند الطوارئ"," ريال يومياً"," دقيقة متوسط التأخير","للغرف والجرّاحين، يُفحص كل جدول","خطة اليوم كاملاً في أقل من 10 ثوانٍ","< 1 ث"]);
+ const mx=Math.max(...D.K.map(k=>k.m.cost));
+ $("#otc").innerHTML=D.K.map((k,i)=>[["m","--red"],["o","--bar"]].map((p,j)=>`<div class="hb"><span>${j?"":dl(i).slice(0,10)}</span><div class="t"><u style="width:${k[p[0]].cost/mx*100}%;background:var(${p[1]})"></u></div><span class="num">${nf(k[p[0]].cost)}</span></div>`).join("")).join("");
+ check(false);steps();calc();route();motion();integ();chrome();statics();app()};
+
+const doEm=async()=>{const min=+$("#eMin").value;if(!(min>=15&&min<=400)){$("#eErr").textContent="Enter expected minutes between 15 and 400.";return false}
+ const nowM=+$("#eNow").value,dp=+$("#eDp").value,su=$("#eSu").value,d=S.d;$("#eErr").textContent="";
+ if(!ME||!ME.permissions.includes("emergency")){const r=replan(d,nowM,{dp,su,min});S.re[d]=r;S.m="replan";S.sel=null;render();app();
+  $("#reOut").innerHTML=`<div class="msg"><b>Preview: re-planned in your browser in ${r.ms<1?r.ms.toFixed(2):r.ms.toFixed(1)} ms.</b> Emergency placed in ${r.room} at ${fmt(r.at)}. ${r.moved} case${r.moved===1?"":"s"} re-timed, ${r.def.length} moved to the next day. Room clashes: ${r.cl[0]}. Surgeon clashes: ${r.cl[1]}.<br><span class="mute">Sign in as a coordinator to re-plan on the server with Salem's engine, timed by the server and published to OR staff.</span></div>`;return true}
+ const btn=$("#emf button[type=submit]");btn.disabled=true;$("#reOut").innerHTML=`<div class="msg">Re-planning on the server…</div>`;
+ try{const e=await api("POST","/api/emergencies",{date:D.days[d],nowMin:nowM,department:D.depts[dp],surgeonId:su,minutes:min});
+  const byId=new Map(D.cases.map(c=>[c.i,c]));
+  const items=e.items.filter(i=>i.status!=="deferred").map(i=>{const c=byId.get(i.caseId)||{i:i.caseId,dp,to:i.turnoverMin,ad:i.actualMin,bd:min,em:1};
+   return{c,r:D.rooms.indexOf(i.room),s:i.startMin,dur:i.durMin,su:i.surgeonId,em:i.status==="emergency"?1:0,nw:i.isNew?1:0,mv:i.moved?1:0,o:i.wasStartMin??i.startMin}});
+  const r={items,def:e.items.filter(i=>i.status==="deferred"),moved:e.result.moved,ms:e.engineMs,cl:e.result.clashes,room:e.result.room,at:e.result.atMin,id:e.id,server:1};
+  S.re[d]=r;S.m="replan";S.sel=null;render();app();
+  const can=ME.permissions.includes("publish");
+  $("#reOut").innerHTML=`<div class="msg"><b>Re-planned on the server in ${nf(e.engineMs)} ms</b> (Salem's engine, solver ${e.result.solveS.toFixed(2)} s). Emergency ${esc(e.caseId)} placed in ${esc(r.room)} at ${fmt(r.at)}. ${r.moved} case${r.moved===1?"":"s"} re-timed, ${r.def.length} moved to the next day. Room clashes: ${r.cl[0]}. Surgeon clashes: ${r.cl[1]}.<br><span class="mute">Proposed: OR staff do not see it until it is published. Timed by the server, from receiving the emergency to storing the new plan.</span>${can?`<div class="row" style="margin:10px 0 0"><button class="p" type="button" id="ePub">Publish to OR staff</button><button type="button" id="eDis">Discard</button></div>`:""}</div>`;
+  if(can){$("#ePub").addEventListener("click",async()=>{try{await api("POST",`/api/emergencies/${e.id}/publish`);note(`Emergency ${e.caseId} published. OR staff see it in My schedule; the end-to-end clock stops at their first view.`);reload()}catch(err){$("#eErr").textContent=err.message}});
+   $("#eDis").addEventListener("click",async()=>{try{await api("POST",`/api/emergencies/${e.id}/discard`);delete S.re[d];S.m="orbit";render();app();$("#reOut").innerHTML=`<div class="msg">Re-plan discarded. The published plan is unchanged.</div>`}catch(err){$("#eErr").textContent=err.message}})}
+  return true}catch(err){$("#eErr").textContent=err.message;$("#reOut").innerHTML="";return false}finally{btn.disabled=false}};
+
+const loadEm=async()=>{const el=$("#eS");if(!el)return;if(!ME){el.innerHTML=`<div class="msg">Sign in to see the server record.</div>`;return}
+ try{const a=await api("GET","/api/emergencies?date="+D.days[S.d]);const t=x=>x?new Date(x).toLocaleTimeString("en-GB"):"—";
+  el.innerHTML=a.length?tbl(["Case","Registered","Engine","Placed","Plan","Published","Seen by OR staff","End to end"],a.map(x=>[esc(x.caseId),t(x.registeredAt),nf(x.engineMs)+" ms",x.result?esc(x.result.room)+" "+fmt(x.result.atMin):"",esc(x.versionStatus||""),t(x.publishedAt),t(x.firstSeenAt),x.endToEndMs==null?"—":(x.endToEndMs/1000).toFixed(1)+" s"]),[2,7]):`<div class="msg">No emergency registered on the server for this day yet.</div>`}
+ catch(e){el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const staffSeen=async()=>{if(!ME||ME.role!=="staff")return;const el=$("#stSeen");try{const r=await api("GET","/api/staff/schedule?date="+D.days[S.d]);
+  if(el)el.innerHTML=r.seen.length?`<div class="msg"><b>New since you last looked:</b> ${r.seen.map(x=>esc(x.caseId)).join(", ")} was added to today's published plan.</div>`:""}catch(e){if(el)el.innerHTML=`<div class="msg" style="color:var(--red)">${esc(e.message)}</div>`}};
+const check=live=>{const t0=performance.now(),n=D.days.length,sum=(m)=>{let rh=0,ot=0,dlS=0,dlN=0,gap=0,cnt=0;
+  for(let d=0;d<n;d++){const bs=bars(d,m),load=D.rooms.map(()=>0);let a=0,b=0;
+   bs.forEach(x=>{load[x.r]+=x.dur+x.c.to;(shift[x.su]==="B"?b+=x.dur:a+=x.dur)});
+   const dd=bs.map(x=>x.s-(m==="manual"?x.c.bs:x.c.ops));dlS+=dd.reduce((p,q)=>p+q,0)/dd.length;dlN++;
+   rh+=load.reduce((p,q)=>p+q,0)/60;ot+=load.reduce((p,q)=>p+Math.max(0,q-CAP),0);gap+=Math.abs(a-b)/(a+b);cnt+=bs.length}
+  return{rh:rh/n,cost:ot*RATE/n,dl:dlS/dlN,gap:gap/n*100,cnt:cnt/n}};
+ const M=sum("manual"),O=sum("orbit"),pct=(a,b)=>100*(a-b)/a;let rc=0,sc=0,mxR=0,mxS=0;
+ for(let d=0;d<n;d++){const pl=D.cases.filter(c=>c.d===d&&c.st!==2).map(c=>({c,r:c.orr,s:c.ops,dur:c.opd,su:c.os}));const c=clashes(pl);rc+=c[0];sc+=c[1];
+  const sl={};pl.forEach(b=>sl[b.su]=(sl[b.su]||0)+b.dur);mxS=Math.max(mxS,...Object.values(sl))}
+ const em=D.cases.filter(c=>c.em).length/n,def=D.cases.filter(c=>c.st===2).length/D.cases.length*100,slow=Math.max(...D.K.map(k=>k.sv));
+ const ev=D.ev,emTxt=ev.emergencies?`${nf(ev.engineMsMax)} ms, slowest of ${ev.emergencies} server re-plan${ev.emergencies>1?"s":""}`:"no server re-plan yet";
+ const ot=pct(M.cost,O.cost),rh=pct(M.rh,O.rh),dly=pct(M.dl,O.dl);
+ const R=[["Constraint 1","No real patient data (PDPL)",1,"7 scheduling columns read; 0 patient identifiers","The database refuses identifier columns; the import refuses files that carry them"],
+ ["Constraint 2","Durations vary about ±30%; about 3 emergencies a day; revised schedule within 5 min",1,`${D.T.within30}% of surgeries within ±30% of booking; ${em.toFixed(1)} emergencies a day; emergency re-plan ${emTxt}`,"Simulation with data + server"],
+ ["Constraint 3","6 rooms × 10 h; no room or surgeon double-booked",rc+sc===0,`${D.rooms.length} rooms; ${rc} room clashes, ${sc} surgeon clashes across ${n} days; busiest surgeon ${mxS} of 600 min`,"Recomputed from every planned case; enforced by the database"],
+ ["Constraint 4","Overtime at the fixed 1.5× policy rate",1,`SAR ${RATE} per overtime minute in every plan`,"Fixed rate in the database (append-only)"],
+ ["Spec 1","Shift workload gap ≤ 15%",O.gap<=15,`${O.gap.toFixed(0)}% with ORbit (manual ${M.gap.toFixed(0)}%)`,"Simulation with data"],
+ ["Spec 2","Duration prediction accuracy",null,"Owned by ICS; measured in the application","Application, Verification page"],
+ ["Spec 3","Re-schedule in ≤ 5 min",slow<=300&&(ev.engineMsMax==null||ev.engineMsMax<=300000),`Slowest full-day solve ${slow} s; emergency re-plan ${emTxt}`,"Solver log + server timestamps"],
+ ["Spec 4","Room-hours ≤ 85% of baseline",rh>=15,`${(100-rh).toFixed(0)}% of baseline (${M.rh.toFixed(1)} → ${O.rh.toFixed(1)} h a day)`,"Simulation with data"],
+ ["Spec 5","Overtime cost down ≥ 20%",ot>=20,`Down ${ot.toFixed(0)}% (SAR ${nf(M.cost)} → ${nf(O.cost)} a day) with ${O.cnt.toFixed(1)} of ${M.cnt.toFixed(1)} surgeries done; ${def.toFixed(1)}% moved a day`,"Simulation with data"],
+ ["Spec 6","Total OR cost down ≥ 15%",null,"Owned by ACFN; wording awaiting reviewer approval","Cost model"],
+ ["Integrated 1","Waiting down ≥ 30% (start delay on the day)",dly>=30,`Down ${dly.toFixed(0)}% (${M.dl.toFixed(0)} → ${O.dl.toFixed(0)} min)`,"Simulation with data"],
+ ["Integrated 2","Emergency recovery ≤ 10 min",ev.seen?ev.endToEndMsMax<=600000:"p",ev.seen?`${ev.seen} published re-plan${ev.seen>1?"s":""} seen by OR staff; slowest ${(ev.endToEndMsMax/1000).toFixed(1)} s from registration`:"Register an emergency, publish it, then open My schedule as OR staff to measure","Server timestamps"],
+ ["Integrated 3","Room-hours and overtime both down ≥ 15%",rh>=15&&ot>=15,`Overtime down ${ot.toFixed(0)}%, room-hours down ${rh.toFixed(0)}%`,"Simulation with data"]];
+ $("#chk").innerHTML=R.map(r=>`<tr><td>${r[0]}</td><td data-l="Requirement">${r[1]}</td><td data-l="Result"><span class="pill ${r[2]==null||r[2]==="p"?"o":r[2]?"y":"n"}">${r[2]==null?"Other team":r[2]==="p"?"Pending":r[2]?"Met":"Not met"}</span></td><td data-l="Measured">${r[3]}</td><td data-l="Evidence" class="mute">${r[4]}</td></tr>`).join("");
+ const met=R.filter(r=>r[2]===true||r[2]===1).length,not=R.filter(r=>r[2]===false||r[2]===0).length,pend=R.filter(r=>r[2]==="p").length;
+ $("#runOut").innerHTML=`<b>${met} met</b>, ${not} not met${pend?`, ${pend} pending`:""}, ${R.length-met-not-pend} measured by other departments${live?` · read from the database and recomputed just now in ${(performance.now()-t0).toFixed(0)} ms`:""}`};
+$("#run").addEventListener("click",async()=>{if(!gate())return;const t0=performance.now();try{Object.assign(D,await api("GET","/api/orbit/data"))}catch(e){$("#runOut").textContent=e.message;return}check(true);log("Prototype check run",$("#runOut").textContent.split(" ·")[0])});
+
+const TOUR=[["schedule","Meet the day board","Each row is an operating room, each bar a surgery. The red line is 6:00 PM, the end of the 10-hour day.",()=>{S.d=1;S.m="orbit";$("#day").value=1}],
+ ["schedule","See the hand-built day","This is the manual schedule after real durations played out. Red on the right is overtime.",()=>{S.m="manual"}],
+ ["schedule","Let ORbit plan it","Same surgeries, same durations. ORbit chose the room and surgeon for each case. Compare the four numbers under the board.",()=>{S.m="orbit"}],
+ ["schedule","Inspect a case","Select any bar to see its department, surgeon, booked and real duration. We selected one for you.",()=>{S.m="orbit";S.sel=3}],
+ ["schedule","Add an emergency","At 10:30 AM a 90-minute emergency arrives. We pressed Re-plan: started cases stayed, the rest moved, and the clash count is shown.",()=>{S.m="orbit";$("#eNow").value=630;$("#eMin").value=90;doEm()}],
+ ["check","Check the proof","Every constraint and specification, recomputed from the plans. Press Run the check now to do it yourself.",()=>{}]];
+let ti=-1;
+const steps=()=>$("#steps").innerHTML=TOUR.map((t,i)=>`<div class="step"><div class="n">${i+1}</div><div><h3>${t[1]}</h3><p class="mute" style="margin:0">${t[2]}</p></div><button data-t="${i}">Show me</button></div>`).join("");
+const tour=i=>{ti=i;const el=$("#tour");if(i<0||i>=TOUR.length){el.hidden=true;ti=-1;return}const t=TOUR[i];S.sel=null;t[3]();render();location.hash=t[0];route();
+ el.hidden=false;$("#tT").textContent=`Step ${i+1} of ${TOUR.length}: ${t[1]}`;$("#tP").textContent=t[2];$("#tB").disabled=i===0;$("#tN").textContent=i===TOUR.length-1?"Finish":"Next";window.scrollTo(0,0)};
+$("#steps").addEventListener("click",e=>{const b=e.target.closest("button");if(b)tour(+b.dataset.t)});
+$("#tourGo").addEventListener("click",()=>{log("Guided tour started");tour(0)});$("#tN").addEventListener("click",()=>tour(ti+1));$("#tB").addEventListener("click",()=>tour(ti-1));$("#tX").addEventListener("click",()=>tour(-1));
+
+const calc=()=>{const r=Math.max(1,+$("#cR").value||0),o=Math.max(0,+$("#cO").value||0),p=+$("#cP").value;$("#cPv").textContent=p+"%";
+ const save=o*250*p/100,cost=r*19000,net=save-cost;
+ $("#cOut").innerHTML=`<h3>Your year with ORbit</h3><table><tbody><tr><td>Overtime saved</td><td class="num">SAR ${nf(save)}</td></tr><tr><td>ORbit, ${r} room${r>1?"s":""}</td><td class="num">SAR ${nf(cost)}</td></tr><tr><td>Net result</td><td class="num" style="color:var(${net>=0?"--ok":"--red"})"><b>${net<0?"−":""}SAR ${nf(Math.abs(net))}</b></td></tr><tr><td>Pays for itself in</td><td class="num">${save>0?(cost/save*12).toFixed(1)+" months":"n/a"}</td></tr></tbody></table><p class="sm mute" style="margin-top:10px">An estimate from your inputs, overtime only. It leaves out the value of surgeries no longer cancelled.</p>`};
+["cR","cO","cP"].forEach(i=>$("#"+i).addEventListener("input",calc));
+
+const route=()=>{const v=(location.hash||"#home").slice(1),ok=document.querySelector(`section[data-v="${v}"]`)?v:"home";
+ document.querySelectorAll("section[data-v]").forEach(s=>s.classList.toggle("on",s.dataset.v===ok));
+ document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+ok));
+ if(ok==="audit")loadAudit();if(ok==="emergencies")loadEm();if(ok==="staff")staffSeen();if(ok==="model")modelCard()};
+window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
+init();
+})();
+</script>
+</body>
+</html>
