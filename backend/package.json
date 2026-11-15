@@ -10,9 +10,10 @@
     "dev": "node --watch --env-file=.env src/server.js",
     "db:reset": "dropdb --if-exists --force orbit && createdb orbit && cd ../database && psql -d orbit -v ON_ERROR_STOP=1 -q -f schema.sql -f load.sql && cd ../backend && npm run seed:users",
     "seed:users": "node --env-file=.env scripts/seed-users.js",
-    "engine:setup": "cd ../engine && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",
+    "engine:setup": "cd ../engine && rm -rf .venv && python3.13 -m venv .venv && .venv/bin/pip install -q -r requirements.txt",
     "engine": "cd ../engine && .venv/bin/python service.py",
     "engine:test": "cd ../engine && .venv/bin/python -m unittest -v test_engine.py",
+    "pretest": "npm run test:db",
     "test:db": "dropdb --if-exists --force orbit_test && createdb orbit_test && cd ../database && psql -d orbit_test -v ON_ERROR_STOP=1 -q -f schema.sql -f load.sql",
     "test": "DATABASE_URL=postgresql://localhost/orbit_test node --env-file=.env --test --test-concurrency=1 test/api.test.js"
   },

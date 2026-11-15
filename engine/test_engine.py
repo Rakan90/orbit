@@ -6,7 +6,10 @@ import csv
 import os
 import unittest
 
+import pandas as pd
+
 import service
+from service import v2
 
 DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "database", "data")
 
@@ -43,9 +46,32 @@ class V2Data(unittest.TestCase):
                 self.assertEqual(float(g[k]), float(ref[k]), (ref["case_id"], k))
         self.assertEqual(len(self.sim["roster"]), 20)
 
-    def test_optimize_v2_mode_matches_v2_plan_without_clashes(self):
+    def test_v2_mode_rerun_no_clashes_and_v2_specifications_still_met(self):
+        """V2 mode re-run: no clashes and V2's specifications still met."""
         out = service.optimize({"rows": self.sim["rows"], "roster": self.sim["roster"], "mode": "v2"})
+        # 1. no room or surgeon clashes
         self.assertEqual(out["clashes"], [0, 0])
+        # 2. every case in the result exactly once, as scheduled, emergency or deferred
+        ids = [it["case_id"] for it in out["items"]]
+        self.assertEqual(sorted(ids), sorted(r["case_id"] for r in self.sim["rows"]))
+        self.assertTrue(all(it["status"] in ("scheduled", "emergency", "deferred") for it in out["items"]))
+        # 3. Spec 3: slowest day solves in under 5 minutes
+        self.assertLess(max(out["solveS"].values()), 300)
+        # 4./5. Spec 5 and Integrated Spec 1, computed as sorrs_tool_v2.compare() does (day_summary, mean over days)
+        sim = pd.DataFrame(self.sim["rows"])
+        m = v2.day_summary(sim.assign(planned_start_min=sim.booked_start_min), "actual_start_min", "actual_end_min", "manual")
+        sched = pd.DataFrame([it for it in out["items"] if it["status"] != "deferred"])
+        sched = sched.merge(sim[["case_id", "actual_duration_min", "turnover_min"]], on="case_id")
+        o = v2.day_summary(sched, "actual_start_min", "actual_end_min", "SORRS")
+        a, b = m.mean(numeric_only=True), o.mean(numeric_only=True)
+        ot = 100 * (a.overtime_cost_sar - b.overtime_cost_sar) / a.overtime_cost_sar if a.overtime_cost_sar else 0
+        dl = 100 * (a.start_delay_min - b.start_delay_min) / a.start_delay_min if a.start_delay_min else 0
+        # 6. deferred electives at most 5% of electives
+        em = {r["case_id"]: int(r["is_emergency"]) for r in self.sim["rows"]}
+        electives = [it for it in out["items"] if not em[it["case_id"]]]
+        deferred = 100 * sum(it["status"] == "deferred" for it in electives) / len(electives)
+        # Information only: HiGHS may stop at a different plan within mip_rel_gap 0.01 on another platform,
+        # so a field-for-field match with V2's sorrs_optimized.csv is platform-dependent and not asserted.
         status = {"scheduled": "scheduled", "emergency (kept)": "emergency", "deferred to next day": "deferred"}
         same = total = 0
         for it in out["items"]:
@@ -55,9 +81,13 @@ class V2Data(unittest.TestCase):
                 same += str(it[k] if it[k] is not None else "") == str(ref[k]).replace(".0", "")
             total += 1
             same += status[ref["status"]] == it["status"]
-        print(f"\n  V2 mode: {same}/{total} fields identical to V2's sorrs_optimized.csv; solve {out['solveS']}")
-        self.assertGreater(same / total, 0.95)
-        self.assertLess(max(out["solveS"].values()), 300)          # Spec 3 budget per day
+        print(f"\n  V2 mode re-run: overtime cost/day {a.overtime_cost_sar:.0f} -> {b.overtime_cost_sar:.0f} SAR ({ot:+.0f}%), "
+              f"start delay {a.start_delay_min:.1f} -> {b.start_delay_min:.1f} min ({dl:+.0f}%), "
+              f"deferred electives {deferred:.1f}%, slowest day {max(out['solveS'].values())} s; "
+              f"{same}/{total} fields identical to V2's sorrs_optimized.csv (info)")
+        self.assertGreaterEqual(ot, 20)          # Spec 5: overtime cost -20%
+        self.assertGreaterEqual(dl, 30)          # Integrated Spec 1: start delay -30%
+        self.assertLessEqual(deferred, 5)        # deferred electives <= 5%
 
     def test_booked_mode_plans_without_actual_durations(self):
         out = service.optimize({"rows": self.sim["rows"], "roster": self.sim["roster"], "mode": "booked"})
